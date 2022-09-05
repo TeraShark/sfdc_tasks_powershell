@@ -18,7 +18,7 @@ There are 4 mandatory steps to install this script, and 2 optional steps for a b
     * Customize the list of task types (`$taskTypes`) to match your most commonly used types, ensuring that they match what is listed in your SFDC UI instance.
 5. Perform an initial request to log in and cache your credentials in the SFDC CLI tool.
     * Open a powershell prompt and type: `sfdx-add-org`
-    * This will prompt you to enter your Organization alias or Organization ID, and then prompt you to specify whether it is a sandbox or production instance. 
+    * This will prompt you to log in through the browser, then enter your Organization alias or Organization ID, and, finally, prompt you to specify whether it is a sandbox or production instance. After this completes, you'll be ready to use this script.
 6. **(*Optional | recommended*)** Create a Desktop or Taskbar shortcut to the script and customize the icon for ease of access.
     * To create a shortcut, simply right-click an open space on your Desktop, select "New -> Shortcut".
     * For the path, you will need to specify the path to Powershell, followed by the path to your `sfdc_create_task.ps1` script. 
