@@ -9,7 +9,8 @@ As opposed to navigating through the SFDC Web UI, this script allows you to simp
 ## Installation
 ### The easier way
 Run the `setup.ps1` script AS AN ADMINISTRATOR and it will prompt you through the process.
-Once done, modify the **"*sfdc_create_task.ps1*"** script to include your corporate email address or username for SFDC.
+It will also download whatever you need to complete the installation.
+Once setup is complete, don't forget to modify the **"*sfdc_create_task.ps1*"** script to include your corporate email address or username for SFDC and perhaps customize your task type list:
 
 * At the top of file, ensure that your email address for SFDC is listed as the value for `$username`.
 * Customize the list of task types (`$taskTypes`) to match your most commonly used types, ensuring that they match what is listed in your SFDC UI instance.
