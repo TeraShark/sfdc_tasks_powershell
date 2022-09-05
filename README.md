@@ -11,6 +11,7 @@ As opposed to navigating through the SFDC Web UI, this script allows you to simp
 There are 4 mandatory steps to install this script, and 2 optional steps for a better experience.
 
 1. Download and install the SFDC CLI tool for SFDX by downloading [directly from here](https://developer.salesforce.com/media/salesforce-cli/sfdx/channels/stable/sfdx-x64.exe).
+    * ***Note***: You may need Admin rights to install the CLI package.
 2. **(*Optional | recommended*)** Download and install v7.2 of Powershell [directly from here](https://github.com/PowerShell/PowerShell/releases/download/v7.2.6/PowerShell-7.2.6-win-x64.msi).
 3. Download the files from this repo or clone it.
 4. Modify the **"*sfdc_create_task.ps1*"** script to include your corporate email address or username for SFDC.
