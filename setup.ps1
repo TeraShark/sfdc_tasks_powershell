@@ -1,15 +1,5 @@
 #Requires -RunAsAdministrator
 
-Function sfdx-add-org(){
-	$ORGALIAS = Read-Host -Prompt "`nALIAS FOR THE ORG"
-	$TYPE = Read-Host -Prompt "`nProduction or Sandbox (p/s)"
-	if($TYPE -eq "p"){
-		sfdx force:auth:web:login -a $ORGALIAS
-	} else {
-		sfdx force:auth:web:login -a $ORGALIAS -r https://test.salesforce.com/
-	}
-}
-
 $dl = "C:$Env:HOMEPATH\Downloads"
 $sfdc_uri = "https://developer.salesforce.com/media/salesforce-cli/sfdx/channels/stable/sfdx-x64.exe"
 $ps_uri = "https://github.com/PowerShell/PowerShell/releases/download/v7.2.6/PowerShell-7.2.6-win-x64.msi"

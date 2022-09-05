@@ -32,7 +32,7 @@ There are 5 mandatory steps to install this script, and 2 optional steps for a b
     * At the top of file, ensure that your email address for SFDC is listed as the value for `$username`.
     * Customize the list of task types (`$taskTypes`) to match your most commonly used types, ensuring that they match what is listed in your SFDC UI instance.
 5. Perform an initial request to log in and cache your credentials in the SFDC CLI tool.
-    * Open a powershell prompt and type: `sfdx-add-org`
+    * Open a powershell prompt and type: `sfdx force:auth:web:login -a <org>` where <org> is your organization alias (eg. microsoft).
     * This will prompt you to log in through the browser, then enter your Organization alias or Organization ID, and, finally, prompt you to specify whether it is a sandbox or production instance. After this completes, you'll be ready to use this script.
 6. Set the local Powershell Execution-Policy in order to run sfdx commands
     * Open a Powershell prompt as an Administrator and type: `Set-ExecutionPolicy Unrestricted` and then accept the prompt.
