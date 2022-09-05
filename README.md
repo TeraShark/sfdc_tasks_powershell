@@ -7,6 +7,9 @@ The script relies on the official SFDC CLI tool, downloadable [here](https://dev
 As opposed to navigating through the SFDC Web UI, this script allows you to simply enter the Opportunity No (Deal ID), select the task type from a reduced list of tasks, enter a Task description and you're done. As opposed to spending valuable time navigating through the web UI, waiting for sections and pages to load, clickety-click-clicking and selecting from a plethora of options, this script gets you through the process in as little as 15 seconds :-)
 
 ## Installation
+### The easier way
+Run the `setup.ps1` script AS AN ADMINISTRATOR and it will prompt you through the process.
+Once done, modify the 
 
 There are 5 mandatory steps to install this script, and 2 optional steps for a better experience.
 
