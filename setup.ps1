@@ -1,5 +1,10 @@
 #Requires -RunAsAdministrator
 
+# ############################################################################################################################
+# Author: Chris Alleaume                                                                                                     #
+# Purpose: Create SFDC tasks quickly and effectively                                                                         #
+# ############################################################################################################################
+
 $dl = "C:$Env:HOMEPATH\Downloads"
 $sfdc_uri = "https://developer.salesforce.com/media/salesforce-cli/sfdx/channels/stable/sfdx-x64.exe"
 $ps_uri = "https://github.com/PowerShell/PowerShell/releases/download/v7.2.6/PowerShell-7.2.6-win-x64.msi"
