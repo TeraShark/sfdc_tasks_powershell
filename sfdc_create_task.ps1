@@ -6,7 +6,7 @@
 # Variables for settings
 
 # Enter your SSO email address used in SFDC, or your username
-$username = '' 
+$username = 'your_email@some.domain' 
 # Customize this shortened task type list (ensuring that they match what's available in your SFDC instance)
 # This makes it easier to only display task types that are relevant to your daily tasks
 # Pay attention to the ordering and the colors used to display these tasks further below in this script
