@@ -12,8 +12,14 @@ Run the `setup.ps1` script AS AN ADMINISTRATOR and it will prompt you through th
 It will also download whatever you need to complete the installation.
 Once setup is complete, don't forget to modify the **"*sfdc_create_task.ps1*"** script to include your corporate email address or username for SFDC and perhaps customize your task type list:
 
-* At the top of file, ensure that your email address for SFDC is listed as the value for `$username`.
-* Customize the list of task types (`$taskTypes`) to match your most commonly used types, ensuring that they match what is listed in your SFDC UI instance.
+1. At the top of file, ensure that your email address for SFDC is listed as the value for `$username`.
+2. Customize the list of task types (`$taskTypes`) to match your most commonly used types, ensuring that they match what is listed in your SFDC UI instance.
+3. **(*Optional | recommended*)** Create a Desktop or Taskbar shortcut to the script and customize the icon for ease of access.
+    * To create a shortcut, simply right-click an open space on your Desktop, select "New -> Shortcut".
+    * For the path, you will need to specify the path to Powershell, followed by the path to your `sfdc_create_task.ps1` script. 
+        * Eg. `"C:\Program Files\PowerShell\7\pwsh.exe" -WorkingDirectory ~ "<path to your>\sfdc_create_task.ps1">`
+    * You can also change the icon. I've included an icon you can use in this repo.
+    * In order to create a Taskbar shortcut, first launch your newly created shortcut, right-click on the now-running powershell instance IN THE TASKBAR, and select "Pin to taskbar"
 
 ### The manual way, in case the setup script isn't working for you...
 There are 5 mandatory steps to install this script, and 2 optional steps for a better experience.
@@ -28,14 +34,15 @@ There are 5 mandatory steps to install this script, and 2 optional steps for a b
 5. Perform an initial request to log in and cache your credentials in the SFDC CLI tool.
     * Open a powershell prompt and type: `sfdx-add-org`
     * This will prompt you to log in through the browser, then enter your Organization alias or Organization ID, and, finally, prompt you to specify whether it is a sandbox or production instance. After this completes, you'll be ready to use this script.
-6. **(*Optional | recommended*)** Create a Desktop or Taskbar shortcut to the script and customize the icon for ease of access.
+6. Set the local Powershell Execution-Policy in order to run sfdx commands
+    * Open a Powershell prompt as an Administrator and type: `Set-ExecutionPolicy Unrestricted` and then accept the prompt.
+7. **(*Optional | recommended*)** Create a Desktop or Taskbar shortcut to the script and customize the icon for ease of access.
     * To create a shortcut, simply right-click an open space on your Desktop, select "New -> Shortcut".
     * For the path, you will need to specify the path to Powershell, followed by the path to your `sfdc_create_task.ps1` script. 
         * Eg. `"C:\Program Files\PowerShell\7\pwsh.exe" -WorkingDirectory ~ "<path to your>\sfdc_create_task.ps1">`
     * You can also change the icon. I've included an icon you can use in this repo.
     * In order to create a Taskbar shortcut, first launch your newly created shortcut, right-click on the now-running powershell instance IN THE TASKBAR, and select "Pin to taskbar"
-7. Set the local Powershell Execution-Policy in order to run sfdx commands
-    * Open a Powershell prompt as an Administrator and type: `Set-ExecutionPolicy Unrestricted` and then accept the prompt.
+
 
 ## Usage
 Simply launch the shortcut or script using Powershell and follow the prompts. Easy-peasy-lemon-squeezy.
