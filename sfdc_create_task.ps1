@@ -6,7 +6,7 @@
 # Variables for settings
 
 # Enter your SSO email address used in SFDC, or your username
-$username = 'your_email@some.domain' 
+$username = 'c_alleaume@dell.com' 
 # Customize this shortened task type list (ensuring that they match what's available in your SFDC instance)
 # This makes it easier to only display task types that are relevant to your daily tasks
 # Pay attention to the ordering and the colors used to display these tasks further below in this script
@@ -24,7 +24,7 @@ Write-Host "### ========================================= ###" -ForegroundColor 
 Write-Host " "
 
 # Prompt for Deal / Opportunity ID
-$dealId = $(Write-Host "Enter Deal ID: " -ForegroundColor Yellow -BackgroundColor DarkGreen -NoNewLine; Read-Host) 
+$dealId = $(Write-Host "Enter Deal ID: " -ForegroundColor Yellow -BackgroundColor DarkGreen -NoNewLine; Read-Host).Trim()
 
 # Find opp ID by Deal ID
 Write-Host "Fetching Opportunity..." -ForegroundColor Yellow
