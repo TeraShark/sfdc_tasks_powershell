@@ -8,7 +8,7 @@ As opposed to navigating through the SFDC Web UI, this script allows you to simp
 
 ## Installation
 
-There are 4 mandatory steps to install this script, and 2 optional steps for a better experience.
+There are 5 mandatory steps to install this script, and 2 optional steps for a better experience.
 
 1. Download and install the SFDC CLI tool for SFDX by downloading [directly from here](https://developer.salesforce.com/media/salesforce-cli/sfdx/channels/stable/sfdx-x64.exe).
     * ***Note***: You may need Admin rights to install the CLI package.
@@ -26,6 +26,8 @@ There are 4 mandatory steps to install this script, and 2 optional steps for a b
         * Eg. `"C:\Program Files\PowerShell\7\pwsh.exe" -WorkingDirectory ~ "<path to your>\sfdc_create_task.ps1">`
     * You can also change the icon. I've included an icon you can use in this repo.
     * In order to create a Taskbar shortcut, first launch your newly created shortcut, right-click on the now-running powershell instance IN THE TASKBAR, and select "Pin to taskbar"
+7. Set the local Powershell Execution-Policy in order to run sfdx commands
+    * Open a Powershell prompt as an Administrator and type: `Set-ExecutionPolicy Unrestricted` and then accept the prompt.
 
 ## Usage
 Simply launch the shortcut or script using Powershell and follow the prompts. Easy-peasy-lemon-squeezy.
