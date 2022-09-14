@@ -6,7 +6,7 @@
 # Variables for settings
 
 # Enter your SSO email address used in SFDC, or your username
-$username = '' 
+$username = 'c_alleaume@dell.com' 
 # Customize this shortened task type list (ensuring that they match what's available in your SFDC instance)
 # This makes it easier to only display task types that are relevant to your daily tasks
 # Pay attention to the ordering and the colors used to display these tasks further below in this script
@@ -25,6 +25,15 @@ Write-Host " "
 
 # Prompt for Deal / Opportunity ID
 $dealId = $(Write-Host "Enter Deal ID: " -ForegroundColor Yellow -BackgroundColor DarkGreen -NoNewLine; Read-Host).Trim()
+$isDealIdValid = $false
+while($isDealIdValid -ne $true){
+    if ($dealId -match "^\d+$") {
+        $isDealIdValid = $true
+    } else {
+        Write-Host "ERROR: Deal ID [$dealId] is not valid. Please use a valid numeric Deal ID." -ForegroundColor Red
+        $dealId = $(Write-Host "Enter Deal ID: " -ForegroundColor Yellow -BackgroundColor DarkGreen -NoNewLine; Read-Host).Trim()
+    }
+}
 
 # Find opp ID by Deal ID
 Write-Host "Fetching Opportunity..." -ForegroundColor Yellow
@@ -62,9 +71,10 @@ $nowTime = Get-Date -Format s
 $useToday = $(Write-Host "Use today's date for Task? (y/n): " -ForegroundColor Yellow -BackgroundColor DarkGreen -NoNewLine; Read-Host) 
 
 if ($useToday -eq 'n'){
-    $inDate = Read-Host -Prompt "Enter Task Date in the format [MM/dd/yy HH:mm] (eg. 10/31/22 09:55)"
-    $customDate = [datetime]::parseexact($inDate, 'MM/dd/yy HH:mm', $null)
+    $inDate = Read-Host -Prompt "Enter Task Date in the format [MM/dd/yy] (eg. 10/31/22)"
+    $customDate = [datetime]::ParseExact($inDate, 'MM/dd/yy', $null)
     $now = $customDate.ToString("yyyy-MM-dd")
+    Write-Host "Task Date: $now" -ForegroundColor Blue
     $nowTime = $customDate.ToUniversalTime().ToString( "yyyy-MM-ddTHH:mm:ss.fffffffZ" )
 }
 Write-Host " "
