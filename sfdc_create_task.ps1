@@ -1,6 +1,6 @@
 # ############################################################################################################################
 # Author: Chris Alleaume                                                                                                     #
-# Purpose: Create SFDC tasks quickly and easily                                                                         #
+# Purpose: Create SFDC tasks quickly and easily                                                                              #
 # ############################################################################################################################
 
 # Variables for settings
@@ -127,7 +127,7 @@ if ($openUrl -eq 'y'){
     exit
 }
 Write-Host "### ===============  Done  =============== ###" -ForegroundColor Yellow
-Read-Host -Prompt "Press Enter to Exit..."
+Start-Sleep -Seconds 2
 #$task = sfdx force:data:record:get -s Task -i "$taskId" -u "$username" --json | ConvertFrom-Json
 
 
