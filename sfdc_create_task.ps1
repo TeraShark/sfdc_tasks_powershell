@@ -10,6 +10,7 @@ $username = '<your_corporate_email_address>'
 # Customize this shortened task type list (ensuring that they match what's available in your SFDC instance)
 # This makes it easier to only display task types that are relevant to your daily tasks
 # Pay attention to the ordering and the colors used to display these tasks further below in this script
+
 $taskTypes = @('Internal Meeting - General',
     'Call Customer',
     'Tech WS - Apps & Data',
@@ -18,12 +19,47 @@ $taskTypes = @('Internal Meeting - General',
     'Accelerator WS - Apps & Data', 
     'Accelerator WS - Multi-Cloud')
 
+$default_bgcolor = (get-host).UI.RawUI.BackgroundColor
+
 Write-Host "### ========================================= ###" -ForegroundColor Cyan
 Write-Host "### ==========- SFDC Task Creator -========== ###" -ForegroundColor Cyan
 Write-Host "### ========================================= ###" -ForegroundColor Cyan
-Write-Host " "
+Write-Host " " -BackgroundColor $default_bgcolor
 
-$default_bgcolor = (get-host).UI.RawUI.BackgroundColor
+
+$repeat = $true
+
+while ($repeat -eq $true) {
+    Write-Host "What do you want to do?" -NoNewLine -ForegroundColor Yellow -BackgroundColor DarkGreen
+    Write-Host " " -BackgroundColor $default_bgcolor
+    Write-Host "1. Create a Task" -ForegroundColor White
+    Write-Host "2. List Tasks created today" -ForegroundColor White
+    Write-Host "3. List Tasks created for the past 5 days" -ForegroundColor White
+    Write-Host " " -BackgroundColor $default_bgcolor
+    $next = $(Write-Host "Choose an action (eg 1): " -ForegroundColor Yellow -BackgroundColor DarkGreen -NoNewLine; Read-Host)
+
+    switch ("$next") {
+        1 { $repeat = $false; Break }
+        2 {
+            # List today's tasks
+            Write-Host "==> Fetching Tasks..." -ForegroundColor White
+            $act_date = (Get-Date).ToString("yyyy-MM-dd")
+            $tasks = sfdx force:data:soql:query -u "$username" --query "SELECT Description, ActivityDate, Task.Account.Name, Type FROM Task USING SCOPE mine WHERE ActivityDate = $act_date" --json | ConvertFrom-Json
+            Write-Host ($tasks.result.records | Format-Table -Property @{Name = 'Date'; Expression = { $_.ActivityDate.PadRight(12, ' ') } }, @{Name = 'Account'; Expression = { $_.Account.Name.subString(0, [System.Math]::Min(20, $_.Account.Name.Length)) + ' ' } }, @{Name = 'Type'; Expression = { $_.Type + '  ' } }, Description | Out-String)
+            Break
+        }
+        3 {
+            # List last 5 days' tasks
+            Write-Host "==> Fetching Tasks..." -ForegroundColor White
+            $act_date = (Get-Date).AddDays(-5).ToString("yyyy-MM-dd")
+            $tasks = sfdx force:data:soql:query -u "$username" --query "SELECT Description, ActivityDate, Task.Account.Name, Type FROM Task USING SCOPE mine WHERE ActivityDate >= $act_date ORDER BY ActivityDate DESC" --json | ConvertFrom-Json
+            Write-Host ($tasks.result.records | Format-Table -Property @{Name = 'Date'; Expression = { $_.ActivityDate.PadRight(12, ' ') } }, @{Name = 'Account'; Expression = { $_.Account.Name.subString(0, [System.Math]::Min(20, $_.Account.Name.Length)) + ' ' } }, @{Name = 'Type'; Expression = { $_.Type + '  ' } }, Description | Out-String)
+            Break
+        }
+    }
+}
+
+
 $repeat = $true
 $same_opp = $false;
 while ($repeat -eq $true) {
@@ -42,7 +78,7 @@ while ($repeat -eq $true) {
         }
 
         # Find opp ID by Deal ID
-        Write-Host "Fetching Opportunity..." -ForegroundColor Yellow
+        Write-Host "==> Fetching Opportunity..." -ForegroundColor Yellow
         $opp = sfdx force:data:soql:query -u "$username" --query "SELECT ID, Name, AccountId FROM Opportunity WHERE Deal_ID__c='$dealId'" --json | ConvertFrom-Json
 
         # Verify that the Opp was found
@@ -105,7 +141,7 @@ while ($repeat -eq $true) {
     Write-Host " "
     $descr = $(Write-Host "Enter Task Description: " -ForegroundColor Yellow -BackgroundColor DarkGreen -NoNewLine; Read-Host)
 
-    Write-Host "Creating Task [$taskType]..." -ForegroundColor Yellow -BackgroundColor $default_bgcolor
+    Write-Host "==> Creating Task [$taskType]..." -ForegroundColor Yellow -BackgroundColor $default_bgcolor
     Write-Host " "
 
     # Create the task and display a summary

@@ -1,8 +1,10 @@
 # Powershell Script: Easy SFDC Task Creation
 ## What is it?
-A Powerfull script which you can execute whenever you need to create a Task for an Opportunity.
+A Powerful script which you can execute whenever you need to create a Task for an Opportunity, List your existing tasks, open them in the browser etc.
 
 As opposed to navigating through the SFDC Web UI, this script allows you to simply enter the Opportunity No (Deal ID), select the task type from a reduced list of tasks, enter a Task description and you're done. As opposed to spending valuable time navigating through the web UI, waiting for sections and pages to load, clickety-click-clicking and selecting from a plethora of options, this script gets you through the process in as little as 15 seconds :-)
+
+If you lose track over what you've created already, you have the option to list tasks created recently.
 
 ## Installation
 ### The easier way
