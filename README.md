@@ -14,7 +14,8 @@ Once setup is complete, don't forget to modify the **"*sfdc_create_task.ps1*"** 
 
 1. At the top of file, ensure that your email address for SFDC is listed as the value for `$username`.
 2. Customize the list of task types (`$taskTypes`) to match your most commonly used types, ensuring that they match what is listed in your SFDC UI instance.
-3. **(*Optional | recommended*)** Create a Desktop or Taskbar shortcut to the script and customize the icon for ease of access.
+3. Open a Powershell prompt window. Type in `sfdx force:auth:web:login` and hit enter. This will open a web browser window and prompt you for permission to access the SFDC API. Follow the prompts and log in on that window, then close the browser and the Powershell window.
+4. **(*Optional | recommended*)** Create a Desktop or Taskbar shortcut to the script and customize the icon for ease of access.
     * To create a shortcut, simply right-click an open space on your Desktop, select "New -> Shortcut".
     * For the path, you will need to specify the path to Powershell, followed by the path to your `sfdc_create_task.ps1` script. 
         * Eg. `"C:\Program Files\PowerShell\7\pwsh.exe" -WorkingDirectory ~ "<path to your>\sfdc_create_task.ps1">`

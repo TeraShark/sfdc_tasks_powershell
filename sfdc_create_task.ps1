@@ -6,10 +6,10 @@
 # Variables for settings
 
 # Enter your SSO email address used in SFDC, or your username
-$username = '<your_corporate_email_address>' 
+$username = '<your internal SFDC email address>'
 # Customize this shortened task type list (ensuring that they match what's available in your SFDC instance)
 # This makes it easier to only display task types that are relevant to your daily tasks
-# Pay attention to the ordering and the colors used to display these tasks further below in this script
+# Pay attention to the ordering and the colors used to display these tasks further down in this script
 
 $taskTypes = @('Internal Meeting - General',
     'Call Customer',
@@ -20,6 +20,16 @@ $taskTypes = @('Internal Meeting - General',
     'Accelerator WS - Multi-Cloud')
 
 $default_bgcolor = (get-host).UI.RawUI.BackgroundColor
+
+Function Get-Tasks {
+    Param ($fromDate)
+    # List today's tasks
+    Write-Host "==> Fetching Tasks..." -ForegroundColor Yellow -NoNewline
+    Write-Host " " -BackgroundColor $default_bgcolor -ForegroundColor White
+    $tasks = sfdx force:data:soql:query -u "$username" --query "SELECT Description, ActivityDate, Task.Account.Name, Type FROM Task USING SCOPE mine WHERE ActivityDate >= $fromDate ORDER BY ActivityDate DESC" --json | ConvertFrom-Json
+    Write-Host ($tasks.result.records | Format-Table -Property @{Name = 'Date'; Expression = { $_.ActivityDate.PadRight(12, ' ') } }, @{Name = 'Account'; Expression = { $_.Account.Name.subString(0, [System.Math]::Min(20, $_.Account.Name.Length)) + ' ' } }, @{Name = 'Type'; Expression = { $_.Type + '  ' } }, Description | Out-String)
+}
+
 
 Write-Host "### ========================================= ###" -ForegroundColor Cyan
 Write-Host "### ==========- SFDC Task Creator -========== ###" -ForegroundColor Cyan
@@ -42,18 +52,14 @@ while ($repeat -eq $true) {
         1 { $repeat = $false; Break }
         2 {
             # List today's tasks
-            Write-Host "==> Fetching Tasks..." -ForegroundColor White
             $act_date = (Get-Date).ToString("yyyy-MM-dd")
-            $tasks = sfdx force:data:soql:query -u "$username" --query "SELECT Description, ActivityDate, Task.Account.Name, Type FROM Task USING SCOPE mine WHERE ActivityDate = $act_date" --json | ConvertFrom-Json
-            Write-Host ($tasks.result.records | Format-Table -Property @{Name = 'Date'; Expression = { $_.ActivityDate.PadRight(12, ' ') } }, @{Name = 'Account'; Expression = { $_.Account.Name.subString(0, [System.Math]::Min(20, $_.Account.Name.Length)) + ' ' } }, @{Name = 'Type'; Expression = { $_.Type + '  ' } }, Description | Out-String)
+            Get-Tasks -fromDate $act_date 
             Break
         }
         3 {
             # List last 5 days' tasks
-            Write-Host "==> Fetching Tasks..." -ForegroundColor White
             $act_date = (Get-Date).AddDays(-5).ToString("yyyy-MM-dd")
-            $tasks = sfdx force:data:soql:query -u "$username" --query "SELECT Description, ActivityDate, Task.Account.Name, Type FROM Task USING SCOPE mine WHERE ActivityDate >= $act_date ORDER BY ActivityDate DESC" --json | ConvertFrom-Json
-            Write-Host ($tasks.result.records | Format-Table -Property @{Name = 'Date'; Expression = { $_.ActivityDate.PadRight(12, ' ') } }, @{Name = 'Account'; Expression = { $_.Account.Name.subString(0, [System.Math]::Min(20, $_.Account.Name.Length)) + ' ' } }, @{Name = 'Type'; Expression = { $_.Type + '  ' } }, Description | Out-String)
+            Get-Tasks -fromDate $act_date 
             Break
         }
     }
@@ -87,15 +93,15 @@ while ($repeat -eq $true) {
             Read-Host -Prompt "Press Enter to exit"
             exit
         }
-
+        Write-Host "==> Opportunity found..." -ForegroundColor Yellow
         # Set variables for future queries
         $oppId = $opp.result.records.Id
         $oppName = $opp.result.records.Name
         $accountId = $opp.result.records.AccountId
-
+        Write-Host "==> Fetching Account Details..." -ForegroundColor Yellow
         # Find the associated account so that we can display for verification
         $account = sfdx force:data:soql:query -u "$username" --query "SELECT Id, Name FROM Account WHERE Id='$accountId'" --json | ConvertFrom-Json
-        Write-Host " "
+        Write-Host " " -BackgroundColor $default_bgcolor
         $accountName = $account.result.records.Name
     }
 
@@ -106,20 +112,6 @@ while ($repeat -eq $true) {
     Write-Host "Opportunity Name: " -ForegroundColor Blue -NoNewline
     Write-Host "$oppName" -ForegroundColor Yellow
     Write-Host "Please verify account and opportunity are correct!" -ForegroundColor DarkYellow
-    Write-Host " "
-    $now = Get-Date -Format "yyyy-MM-dd"
-    $nowTime = Get-Date -Format s
-
-    # Establish whether or not to use today's date for the task
-    $useToday = $(Write-Host "Use today's date for Task? (y/n): " -ForegroundColor Yellow -BackgroundColor DarkGreen -NoNewLine; Read-Host) 
-
-    if ($useToday -eq 'n') {
-        $inDate = Read-Host -Prompt "Enter Task Date in the format [MM/dd/yy] (eg. 10/31/22)"
-        $customDate = [datetime]::ParseExact($inDate, 'MM/dd/yy', $null)
-        $now = $customDate.ToString("yyyy-MM-dd")
-        Write-Host "Task Date: $now" -ForegroundColor Blue
-        $nowTime = $customDate.ToUniversalTime().ToString( "yyyy-MM-ddTHH:mm:ss.fffffffZ" )
-    }
     Write-Host " " -BackgroundColor $default_bgcolor
 
     Write-Host "Choose Task Type:" -NoNewLine -ForegroundColor Yellow -BackgroundColor DarkGreen
@@ -138,11 +130,26 @@ while ($repeat -eq $true) {
     $taskType = $taskTypes[$taskId - 1]
 
     Write-Host "Selected Task Type: $taskType" -ForegroundColor Yellow -BackgroundColor $default_bgcolor
-    Write-Host " "
+    Write-Host " " -BackgroundColor $default_bgcolor
     $descr = $(Write-Host "Enter Task Description: " -ForegroundColor Yellow -BackgroundColor DarkGreen -NoNewLine; Read-Host)
 
+    $now = Get-Date -Format "yyyy-MM-dd"
+    $nowTime = Get-Date -Format s
+    Write-Host " " -BackgroundColor $default_bgcolor
+    # Establish whether or not to use today's date for the task
+    $useToday = $(Write-Host "Use today's date for Task? (y/n): " -ForegroundColor Yellow -BackgroundColor DarkGreen -NoNewLine; Read-Host) 
+
+    if ($useToday -eq 'n') {
+        $inDate = Read-Host -Prompt "Enter Task Date in the format [MM/dd/yy] (eg. 10/31/22)"
+        $customDate = [datetime]::ParseExact($inDate, 'MM/dd/yy', $null)
+        $now = $customDate.ToString("yyyy-MM-dd")
+        Write-Host "Task Date: $now" -ForegroundColor Blue
+        $nowTime = $customDate.ToUniversalTime().ToString( "yyyy-MM-ddTHH:mm:ss.fffffffZ" )
+    }
+    Write-Host " " -BackgroundColor $default_bgcolor
+
     Write-Host "==> Creating Task [$taskType]..." -ForegroundColor Yellow -BackgroundColor $default_bgcolor
-    Write-Host " "
+    Write-Host " " -BackgroundColor $default_bgcolor
 
     # Create the task and display a summary
     $task = sfdx force:data:record:create -s Task -v "Subject='Services' Description='$descr' Status='Completed' Priority='Normal' ActivityDate='$now' WhatId=$oppId IsReminderSet=false TaskSubtype='Task' Type='$taskType' ReminderDateTime='$nowTime'" -u "$username" --json | ConvertFrom-Json
@@ -160,16 +167,19 @@ while ($repeat -eq $true) {
         Write-Host "$dealId" -ForegroundColor Yellow
     }
     else {
-        Write-Host "There was an error creating your task!" -ForegroundColor Red
+        Write-Host "-################  ERROR  #################-" -ForegroundColor Red
+        Write-Host "-- There was an error creating your task! --" -ForegroundColor Red
+        Write-Host "------------- Please try again -------------" -ForegroundColor Red
+        Write-Host "-##########################################-" -ForegroundColor Red
     }
     Write-Host " " -BackgroundColor $default_bgcolor
-    Write-Host "==> Done. What's next?" -NoNewLine -ForegroundColor Yellow -BackgroundColor DarkGreen
+    Write-Host "==> What's next?" -NoNewLine -ForegroundColor Yellow -BackgroundColor DarkGreen
     Write-Host " " -BackgroundColor $default_bgcolor
     Write-Host "1. Open the recently created SFDC task in a browser" -ForegroundColor White
     Write-Host "2. Create another task for the same Opportunity" -ForegroundColor White
     Write-Host "3. Create a new task for a " -NoNewline -ForegroundColor White 
     Write-Host "different " -ForegroundColor Yellow -NoNewline
-    Write-Host "opportunity" -ForegroundColor White 
+    Write-Host "opportunity" -ForegroundColor White
     Write-Host "4. Quit" -ForegroundColor White
     Write-Host " " -BackgroundColor $default_bgcolor
     $next = $(Write-Host "Choose an action (eg 1): " -ForegroundColor Yellow -BackgroundColor DarkGreen -NoNewLine; Read-Host)
@@ -187,8 +197,8 @@ while ($repeat -eq $true) {
         3 { $repeat = $true; $same_opp = $false; Break }
     }
 }
-Write-Host "### ===============  Done  =============== ###" -ForegroundColor Yellow
-Start-Sleep -Seconds 1.5
+Write-Host "### ===============  Done  =============== ###" -ForegroundColor Green
+Start-Sleep -Seconds 1.2
 #$task = sfdx force:data:record:get -s Task -i "$taskId" -u "$username" --json | ConvertFrom-Json
 
 
