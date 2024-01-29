@@ -1,0 +1,26 @@
+Chan/GA/OEM Strategy WS
+Microsoft WS - EndpointSecurity
+Microsoft WS - Fasttrack Benefits
+Microsoft WS - FedZeroTrust
+Microsoft WS - M365Workplace
+Microsoft WS - ModernComms
+Microsoft WS - MXDR
+Microsoft WS - NextGenWin
+Microsoft WS - SalesCompliancePrivacy
+Microsoft WS - SalesDefendAgainstThreats
+Microsoft WS - SalesSecureMultiCloud
+Microsoft WS - SalesSensitiveData
+Microsoft WS - SecureIdentities
+Microsoft WS - Sentinel
+Microsoft WS - TeamsApps
+Microsoft WS - TeamsRooms
+Microsoft WS - UseComplianceRisk
+Microsoft WS - UseSecureMultiCloud
+Microsoft WS - UseSensitiveData
+Microsoft WS - Viva
+Microsoft WS - VivaInsights
+Security WS - MDR Rapid Assessment
+Technical WS - Apps & Data
+Technical WS - Modern Workforce
+Technical WS - Multi-Cloud
+Technical WS - Resiliency & Security
