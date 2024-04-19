@@ -1,0 +1,47 @@
+<View>
+    <Query>
+        <Where>
+            <And>
+                <Neq>
+                    <FieldRef Name="Status" />
+                    <Value Type="Choice">Cancelled</Value>
+                </Neq>
+                <And>
+                    <Neq>
+                        <FieldRef Name="Status" />
+                        <Value Type="Choice">Lost</Value>
+                    </Neq>
+                    <And>
+                        <Neq>
+                            <FieldRef Name="PrimaryContact" />
+                            <Value Type="Text">Small, Robert</Value>
+                        </Neq>
+                        <And>
+                            <IsNotNull>
+                                <FieldRef Name="SFDC_x0020_ID" />
+                            </IsNotNull>
+                            <And>
+                                <Neq>
+                                    <FieldRef Name="Status" />
+                                    <Value Type="Choice">Complete</Value>
+                                </Neq>
+                                <Neq>
+                                    <FieldRef Name="Status" />
+                                    <Value Type="Choice">Cancelled / Archived</Value>
+                                </Neq>
+                            </And>
+                        </And>
+                    </And>
+                </And>
+            </And>
+        </Where>
+    </Query>
+    <ViewFields>
+        <FieldRef Name="ID" />
+        <FieldRef Name="Title" />
+        <FieldRef Name="SFDC_x0020_ID" />
+        <FieldRef Name="TCV_x0020__x0024_" />
+        <FieldRef Name="Est_x002e__x0020_Close" />
+        <FieldRef Name="SFDCLink" />
+    </ViewFields>
+</View>
