@@ -24,7 +24,7 @@ Once setup is complete, don't forget to modify the other (`*.ps1`) scripts to in
     * You can also change the icon. I've included an icon you can use in this repo.
     * In order to create a Taskbar shortcut, first launch your newly created shortcut, right-click on the now-running powershell instance IN THE TASKBAR, and select "Pin to taskbar"
 
-### The manual way, in case the setup script isn't working for you...
+### The manual way, in case the setup script above isn't working for you...
 Follow these steps to install this script, and 2 optional steps for a better experience:
 
 1. Download and install the SFDC CLI tool for SFDX by downloading [directly from here](https://developer.salesforce.com/media/salesforce-cli/sfdx/channels/stable/sfdx-x64.exe).
