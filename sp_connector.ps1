@@ -6,9 +6,14 @@ Write-Host "Settings applied..."
 
 
 # #############~ Change these variables as necessary ~##############
-# Modify this CAML below to include (<Eq>) or exclude (<Neq>) Opp Item Owners ('PrimaryContact')
+# Comment / Uncomment the relevant line below, to filter on Sectors:
+# --- Commercial and Fed: ---
+#$sectorFilter = "<And><Neq><FieldRef Name='Sector' /><Value Type='Choice'>Ent</Value></Neq><Neq><FieldRef Name='Sector' /><Value Type='Choice'>DTS</Value></Neq></And>"
 
-$userFilter = "<And><Neq><FieldRef Name='PrimaryContact' /><Value Type='Text'>deMarrais, Karl</Value></Neq>"
+# --- Enterprise and DTSelect: ---
+$sectorFilter = "<And><Neq><FieldRef Name='Sector' /><Value Type='Text'>Fed</Value></Neq><Neq><FieldRef Name='Sector' /><Value Type='Text'>Comm</Value></Neq></And>"
+
+# Change below based on your SFDC user account:
 $username = 'c_alleaume@dell.com'
 
 # ###################~~~~~~~~~~~~~~~~################################
@@ -17,7 +22,7 @@ $username = 'c_alleaume@dell.com'
 $SiteUrl = "https://dell.sharepoint.com/sites/Pearlj1tech-Team"
 $ListName = "Presales Tracker"
 #InternalName of the selected fields
-$SelectedFields = @("ID", "Title", "Description", "SFDC_x0020_ID", "TCV_x0020__x0024_", "Est_x002e__x0020_Close", "SFDCLink", "Categories", "PrimaryContact")
+$SelectedFields = @("ID", "Title", "Description", "SFDC_x0020_ID", "TCV_x0020__x0024_", "Est_x002e__x0020_Close", "SFDCLink", "Categories", "PrimaryContact", "Sector")
 
 $default_bgcolor = (get-host).UI.RawUI.BackgroundColor
 
@@ -30,19 +35,19 @@ Write-Host "4. Single Sharepoint Item by Opportunity ID" -ForegroundColor White
 Write-Host " " -BackgroundColor $default_bgcolor
 $next = $(Write-Host "Choose an action (eg 1): " -ForegroundColor Yellow -BackgroundColor DarkGreen -NoNewLine; Read-Host)
 
-$camlQuery = "<View><Query><Where>$userFilter<And><Neq><FieldRef Name='Status'/><Value Type='Choice'>Cancelled</Value></Neq><And><Neq><FieldRef Name='Status'/><Value Type='Choice'>Lost</Value></Neq><And><IsNotNull><FieldRef Name='SFDC_x0020_ID'/></IsNotNull><And><Neq><FieldRef Name='Status'/><Value Type='Choice'>Complete</Value></Neq><Neq><FieldRef Name='Status'/><Value Type='Choice'>Cancelled / Archived</Value></Neq></And></And></And></And></And></Where></Query><ViewFields><FieldRef Name='ID' /><FieldRef Name='Title' /><FieldRef Name='Description' /><FieldRef Name='SFDC_x0020_ID' /><FieldRef Name='TCV_x0020__x0024_' /><FieldRef Name='Est_x002e__x0020_Close' /><FieldRef Name='SFDCLink' /><FieldRef Name='PrimaryContact' /></ViewFields></View>"
+$camlQuery = "<View><Query><Where><And><Neq><FieldRef Name='Status'/><Value Type='Choice'>Cancelled</Value></Neq><And><Neq><FieldRef Name='Status'/><Value Type='Choice'>Lost</Value></Neq><And><IsNotNull><FieldRef Name='SFDC_x0020_ID'/></IsNotNull><And><Neq><FieldRef Name='Status'/><Value Type='Choice'>Complete</Value></Neq><And><Neq><FieldRef Name='Status'/><Value Type='Choice'>Cancelled / Archived</Value></Neq>$sectorFilter</And></And></And></And></And></Where></Query><ViewFields><FieldRef Name='ID' /><FieldRef Name='Title' /><FieldRef Name='Description' /><FieldRef Name='SFDC_x0020_ID' /><FieldRef Name='TCV_x0020__x0024_' /><FieldRef Name='Est_x002e__x0020_Close' /><FieldRef Name='SFDCLink' /><FieldRef Name='PrimaryContact' /><FieldRef Name='Sector' /></ViewFields></View>"
 switch ("$next") {
     1 { Break }
     2 {
         # Today's items
-        $camlQuery = "<View><Query><Where>$userFilter<And><Eq><FieldRef Name='Created' /><Value Type='DateTime'><Today /></Value></Eq><And><Neq><FieldRef Name='Status'/><Value Type='Choice'>Cancelled</Value></Neq><And><Neq><FieldRef Name='Status'/><Value Type='Choice'>Lost</Value></Neq><And><IsNotNull><FieldRef Name='SFDC_x0020_ID'/></IsNotNull><And><Neq><FieldRef Name='Status'/><Value Type='Choice'>Complete</Value></Neq><Neq><FieldRef Name='Status'/><Value Type='Choice'>Cancelled / Archived</Value></Neq></And></And></And></And></And></Where></Query><ViewFields><FieldRef Name='ID' /><FieldRef Name='Title' /><FieldRef Name='Description' /><FieldRef Name='SFDC_x0020_ID' /><FieldRef Name='TCV_x0020__x0024_' /><FieldRef Name='Est_x002e__x0020_Close' /><FieldRef Name='SFDCLink' /><FieldRef Name='PrimaryContact' /></ViewFields></View>"
+        $camlQuery = "<View><Query><Where><And><Eq><FieldRef Name='Created' /><Value Type='DateTime'><Today /></Value></Eq><And><Neq><FieldRef Name='Status'/><Value Type='Choice'>Cancelled</Value></Neq><And><Neq><FieldRef Name='Status'/><Value Type='Choice'>Lost</Value></Neq><And><IsNotNull><FieldRef Name='SFDC_x0020_ID'/></IsNotNull><And><Neq><FieldRef Name='Status'/><Value Type='Choice'>Complete</Value></Neq><And><Neq><FieldRef Name='Status'/><Value Type='Choice'>Cancelled / Archived</Value></Neq>$sectorFilter</And></And></And></And></And></And></Where></Query><ViewFields><FieldRef Name='ID' /><FieldRef Name='Title' /><FieldRef Name='Description' /><FieldRef Name='SFDC_x0020_ID' /><FieldRef Name='TCV_x0020__x0024_' /><FieldRef Name='Est_x002e__x0020_Close' /><FieldRef Name='SFDCLink' /><FieldRef Name='PrimaryContact' /><FieldRef Name='Sector' /></ViewFields></View>"
         Break
     }
     3 {
         # Last 5 days' items
         $today = (Get-Date)
         $act_date = $today.AddDays(-5).ToString("yyyy-MM-dd")
-        $camlQuery = "<View><Query><Where>$userFilter<And><Geq><FieldRef Name='Created' /><Value Type='DateTime'>$act_date</Value></Geq><And><Neq><FieldRef Name='Status'/><Value Type='Choice'>Cancelled</Value></Neq><And><Neq><FieldRef Name='Status'/><Value Type='Choice'>Lost</Value></Neq><And><IsNotNull><FieldRef Name='SFDC_x0020_ID'/></IsNotNull><And><Neq><FieldRef Name='Status'/><Value Type='Choice'>Complete</Value></Neq><Neq><FieldRef Name='Status'/><Value Type='Choice'>Cancelled / Archived</Value></Neq></And></And></And></And></And></Where></Query><ViewFields><FieldRef Name='ID' /><FieldRef Name='Title' /><FieldRef Name='Description' /><FieldRef Name='SFDC_x0020_ID' /><FieldRef Name='TCV_x0020__x0024_' /><FieldRef Name='Est_x002e__x0020_Close' /><FieldRef Name='SFDCLink' /><FieldRef Name='PrimaryContact' /></ViewFields></View>"
+        $camlQuery = "<View><Query><Where><And><Geq><FieldRef Name='Created' /><Value Type='DateTime'>$act_date</Value></Geq><And><Neq><FieldRef Name='Status'/><Value Type='Choice'>Cancelled</Value></Neq><And><Neq><FieldRef Name='Status'/><Value Type='Choice'>Lost</Value></Neq><And><IsNotNull><FieldRef Name='SFDC_x0020_ID'/></IsNotNull><And><Neq><FieldRef Name='Status'/><Value Type='Choice'>Complete</Value></Neq><And><Neq><FieldRef Name='Status'/><Value Type='Choice'>Cancelled / Archived</Value></Neq>$sectorFilter</And></And></And></And></And></And></Where></Query><ViewFields><FieldRef Name='ID' /><FieldRef Name='Title' /><FieldRef Name='Description' /><FieldRef Name='SFDC_x0020_ID' /><FieldRef Name='TCV_x0020__x0024_' /><FieldRef Name='Est_x002e__x0020_Close' /><FieldRef Name='SFDCLink' /><FieldRef Name='PrimaryContact' /><FieldRef Name='Sector' /></ViewFields></View>"
         Break
     }
     4 {
@@ -78,7 +83,8 @@ catch {
 }
 
 $Counter = 0
-
+Write-Host "Query: $camlQuery"
+Read-Host
 #PageSize:The number of items to retrieve per page request
 #$ListItems = Get-PnPListItem -List $ListName -Fields $SelectedFields 
 $ListItems = Get-PnPListItem -List $ListName -Query $camlQuery
@@ -303,5 +309,6 @@ Write-Host "==> Invalid MEDDPIC: $($itemsUpdated - $validMEDDPICCount)" -Foregro
 Write-Host "==> Process completed on $(Get-Date)" -ForegroundColor White
 Write-Host "================================================- DONE -================================================" -ForegroundColor Green
 #Write-Host "*** Note: if you see warnings about SFDX being out-of-date, open an Administrator Powershell window, and type 'sfdx update'" -ForegroundColor White
-Read-Host -Prompt "Press Enter to exit..."
-exit
+Read-Host -Prompt "Press Enter to Synchronize Tasks next..."
+& "$PSScriptRoot\sfdc_sync_tasks.ps1"
+# exit
