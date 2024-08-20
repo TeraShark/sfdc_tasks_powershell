@@ -83,8 +83,8 @@ catch {
 }
 
 $Counter = 0
-Write-Host "Query: $camlQuery"
-Read-Host
+# Write-Host "Query: $camlQuery"
+# Read-Host
 #PageSize:The number of items to retrieve per page request
 #$ListItems = Get-PnPListItem -List $ListName -Fields $SelectedFields 
 $ListItems = Get-PnPListItem -List $ListName -Query $camlQuery
