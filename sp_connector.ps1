@@ -4,7 +4,6 @@ Set-Item -Path Env:SFDX_HIDE_RELEASE_NOTES -Value $true
 Set-Item -Path Env:SFDX_HIDE_RELEASE_NOTES_FOOTER -Value $true
 Write-Host "Settings applied..."
 
-
 # #############~ Change these variables as necessary ~##############
 
 # Change below based on your SFDC user account:
@@ -19,6 +18,25 @@ $ListName = "Presales Tracker"
 $SelectedFields = @("ID", "Title", "Description", "SFDC_x0020_ID", "TCV_x0020__x0024_", "Est_x002e__x0020_Close", "SFDCLink", "Categories", "PrimaryContact", "Sector")
 
 $default_bgcolor = (get-host).UI.RawUI.BackgroundColor
+
+$SPConnection = $null
+
+Write-Host "========== Testing Sharepoint connection ===========" -ForegroundColor White
+try {
+    # First try to get list item from cached connection
+    $SPConnection = Get-PnPConnection | Out-Null
+    Write-Host "=> Conection successful..." -ForegroundColor Green
+    Write-Host "====================================================" -ForegroundColor White
+}
+catch {
+    Write-Host "Reconnecting to Sharepoint..." -ForegroundColor Yellow
+    #Connect to PnP Online if above fails
+    $SPConnection = Connect-PnPOnline -Url $SiteURL -UseWebLogin | Out-Null
+    Write-Host "=> Conection successful..." -ForegroundColor Green
+    Write-Host "====================================================" -ForegroundColor White
+}
+Clear-Host
+Write-Host " "
 
 Write-Host "Which items do you want to sync?" -NoNewLine -ForegroundColor Yellow -BackgroundColor DarkGreen
 Write-Host " " -BackgroundColor $default_bgcolor
@@ -62,26 +80,14 @@ switch ("$next") {
     }
 }
 
-Write-Host "========== Testing Sharepoint connection ===========" -ForegroundColor White
-try {
-    # First try to get list item from cached connection
-    Get-PnPListItem -List $ListName -Id 6 > $null
-    Write-Host "=> Conection successful..." -ForegroundColor Green
-    Write-Host "====================================================" -ForegroundColor White
-}
-catch {
-    Write-Host "Reconnecting to Sharepoint..." -ForegroundColor Yellow
-    #Connect to PnP Online if above fails
-    Connect-PnPOnline -Url $SiteURL -UseWebLogin
-    Write-Host "====================================================" -ForegroundColor White
-}
-
 $Counter = 0
 # Write-Host "Query: $camlQuery"
 # Read-Host
 #PageSize:The number of items to retrieve per page request
 #$ListItems = Get-PnPListItem -List $ListName -Fields $SelectedFields 
-$ListItems = Get-PnPListItem -List $ListName -Query $camlQuery
+Write-Host " "
+Write-Host "Fetching Sharepoint Data..." -ForegroundColor White
+$ListItems = Get-PnPListItem -List $ListName -Query $camlQuery -Connection $SPConnection
 
 if ($ListItems -eq $null) {
     Write-Host "=====================================================" -ForegroundColor Red
@@ -92,8 +98,10 @@ if ($ListItems -eq $null) {
     Exit
 }
 
-
-Write-Host "Retrieved $($ListItems.Count) items..."
+Write-Host "Retrieved " -NoNewline
+Write-Host "$($ListItems.Count)" -ForegroundColor Green -NoNewline
+Write-Host " Sharepoint List Items..." -ForegroundColor White
+Write-Host " "
 #Get all items from list
 $itemsUpdated = 0
 $lostItems = @()
@@ -101,10 +109,9 @@ $wonItems = @()
 $invalidItems = @()
 $skippedItems = @()
 $validMEDDPICCount = 0
-$borgUpdates = 0
 
 $ListItems | ForEach-Object {
-    $ListItem = Get-PnPProperty -ClientObject $_ -Property FieldValuesAsText
+    $ListItem = Get-PnPProperty -Connection $SPConnection -ClientObject $_ -Property FieldValuesAsText
     $ListRow = New-Object PSObject
     $Counter++
 
@@ -152,8 +159,11 @@ $ListItems | ForEach-Object {
         # Verify that the Opp was found
         if ($opp.result.totalSize -lt 1) {
             Write-Host "ERROR: Opportunity ID [$dealId] [$cust - $oppDesc] NOT found (or you don't have access)!" -ForegroundColor Red
-            Set-PnPListItem -List $ListName -Identity $ListRow.ID -Values @{"SFDCNotes" = "** INACCESSIBLE SFDC ID **" } > $null
+            # Commented out updating the Notes field (below) on Sharepoint, since this script may be run by multiple people without access to certain records.
+            #Set-PnPListItem -List $ListName -Identity $ListRow.ID -Values @{"SFDCNotes" = "** INACCESSIBLE SFDC ID **" } > $null
             $invalidItems += "[$dealId] [$cust - $oppDesc]"
+            Write-Host "==----------------------------------------------##  End [$dealId]  ##----------------------------------------------==" -ForegroundColor Gray
+            Write-Host "                                                          |" -ForegroundColor White
         }
         else {
             $oppName = $opp.result.records.Name
@@ -240,32 +250,7 @@ $ListItems | ForEach-Object {
                 $updates += @{"Booked" = "0" }
             }
 
-            # ####### ==> No longer updating Borg SKUs / deals <==
-            # # Update the SFDC Item to to tag it with "Borg" Storage OA for reporting:
-            # if ($($ListRow.Categories).Contains("Borg")) {
-            #     try {
-            #         if (!$($opp.result.records.Campaign__c).Contains("Cloud Experience : Storage Administrator")) {
-            #             Write-Host "==> Borg item found. Updating SFDC Opportunity to include Borg Storage OA..." -ForegroundColor Magenta
-            #             # Modified update command to exclude 'force:' due to deprecation warning:
-            #             sfdx data:record:update -u "$username" -s Opportunity -i $oppId -v "Campaign__c='OA - Cloud Experience : Storage Administrator'"
-            #             $borgUpdates++
-            #         }
-            #         else {
-            #             Write-Host "==> Borg item found. SFDC Opportunity already tagged with Borg Storage OA..." -ForegroundColor Magenta
-            #         }
-            #     }
-            #     catch {
-            #         Write-Host "==> Retrying... Borg item found. Updating SFDC Opportunity to include Borg Storage OA..." -ForegroundColor Magenta
-            #         # Below 'sfdx force:data:record' command has been deprecated - need to use sfdx data:record ...
-            #         # sfdx force:data:record:update -u "$username" -s Opportunity -i $oppId -v "Campaign__c='OA - Cloud Experience : Storage Administrator'"
-            #         # Modified update command to exclude 'force:' due to deprecation warning:
-            #         sfdx data:record:update -u "$username" -s Opportunity -i $oppId -v "Campaign__c='OA - Cloud Experience : Storage Administrator'"
-            #         $borgUpdates++
-            #     }
-            # }
-            # ###### ==> End commented code <==
-           
-            Set-PnPListItem -List $ListName -Identity $ListRow.ID -Values $updates > $null
+            Set-PnPListItem -List $ListName -Identity $ListRow.ID -Values $updates -Connection $SPConnection > $null
             Write-Host "==> Sharepoint Item for Opp [$dealId] updated..." -ForegroundColor Green
             $itemsUpdated++
         
@@ -276,33 +261,35 @@ $ListItems | ForEach-Object {
 }
 Write-Host "                                                         ~~~" -ForegroundColor White
 Write-Host "=========================================== Begin SUMMARY ============================================================" -ForegroundColor Gray
-Write-Host "==> Items processed: $($ListItems.Count), Items updated: $itemsUpdated" -ForegroundColor Gray
-Write-Host "----------------- Won Opportunities ($($wonItems.count)) -----------------" -ForegroundColor Green
+Write-Host "==> Sharepoint List Items processed: $($ListItems.Count), List Items updated: $itemsUpdated" -ForegroundColor Gray
+Write-Host "--------------------------- Won Opportunities ($($wonItems.count)) -----------------------------" -ForegroundColor Green
 foreach ( $item in $wonItems) {
-    Write-Host "    - $item" -ForegroundColor Green
+    Write-Host "  - $item" -ForegroundColor Green
 }
-Write-Host "-----------------------------------------------------------" -ForegroundColor Green
-Write-Host "----------------- Lost Opportunities ($($lostItems.count)) -----------------" -ForegroundColor Red
+Write-Host "-------------------------------------------------------------------------------" -ForegroundColor Green
+Write-Host "--------------------------- Lost Opportunities ($($lostItems.count)) ----------------------------" -ForegroundColor Red
 foreach ( $item in $lostItems) {
-    Write-Host "    - $item" -ForegroundColor Red
+    Write-Host "  - $item" -ForegroundColor Red
 }
-Write-Host "-----------------------------------------------------------" -ForegroundColor Red
-Write-Host "----------------- Skipped Items [DFN] ($($skippedItems.count)) -----------------" -ForegroundColor Gray
+Write-Host "-------------------------------------------------------------------------------" -ForegroundColor Red
+Write-Host "--------------------------- Skipped Items [DFN] ($($skippedItems.count)) ---------------------------" -ForegroundColor Gray
 foreach ( $item in $skippedItems) {
-    Write-Host "    - $item" -ForegroundColor Gray
+    Write-Host "  - $item" -ForegroundColor Gray
 }
-Write-Host "----------------------------------------------------------" -ForegroundColor Gray
-Write-Host "----------------- Opps Not Found ($($invalidItems.count)) -----------------" -ForegroundColor Yellow
+Write-Host "-------------------------------------------------------------------------------" -ForegroundColor Gray
+Write-Host "--------------------------- Opps Not Found ($($invalidItems.count)) --------------------------------" -ForegroundColor Yellow
 foreach ( $item in $invalidItems) {
-    Write-Host "    - $item" -ForegroundColor Yellow
+    Write-Host "  - $item" -ForegroundColor Yellow
 }
-Write-Host "----------------------------------------------------------" -ForegroundColor Yellow
-Write-Host "==> Borg Updates: $borgUpdates" -ForegroundColor Magenta
-Write-Host "==> Valid MEDDPIC: $validMEDDPICCount" -ForegroundColor White
-Write-Host "==> Invalid MEDDPIC: $($itemsUpdated - $validMEDDPICCount)" -ForegroundColor Yellow
+Write-Host "-------------------------------------------------------------------------------" -ForegroundColor Yellow
+#Write-Host "==> Valid MEDDPIC: $validMEDDPICCount" -ForegroundColor White
+#Write-Host "==> Invalid MEDDPIC: $($itemsUpdated - $validMEDDPICCount)" -ForegroundColor Yellow
+Write-Host " "
 Write-Host "==> Process completed on $(Get-Date)" -ForegroundColor White
+Write-Host " "
 Write-Host "================================================- DONE -================================================" -ForegroundColor Green
 #Write-Host "*** Note: if you see warnings about SFDX being out-of-date, open an Administrator Powershell window, and type 'sfdx update'" -ForegroundColor White
-Read-Host -Prompt "Press Enter to Synchronize Tasks next..."
+Write-Host " "
+Read-Host -Prompt "Press Enter to Synchronize SP Tasks next..."
 & "$PSScriptRoot\sfdc_sync_tasks.ps1"
 # exit
