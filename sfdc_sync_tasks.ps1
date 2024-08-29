@@ -1,9 +1,4 @@
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT: Change your credentails here !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-$username = 'c_alleaume@dell.com' # Your Corporate Email Address
-$SP_UserName = "Alleaume, Chris" # The way your name is presented in Sharepoint (usually, this is in the format "LastName, FirstName")
-# =====================================================================================================================================
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! End Credentials !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-# =====================================================================================================================================
+
 
 Write-Host "Setting SFDX CLI variables..."
 Set-Item -Path Env:SF_AUTOUPDATE_DISABLE -Value $false
@@ -18,24 +13,64 @@ $SelectedFields = @("ID", "Title", "Description", "SFDC_x0020_ID", "Task_x0020_T
 
 $default_bgcolor = (get-host).UI.RawUI.BackgroundColor
 
-# Write-Host "Loading Sharepoint Powershell module..."
-# Install-Module -Name "PnP.PowerShell"
-# Write-Host "Sharepoint Powershell module loaded..."
+
+Function Save-UserName {
+    $username = $(Write-Host "Please enter your email address as it appears in your SFDC Profile:" -ForegroundColor Yellow -BackgroundColor DarkGreen -NoNewLine; Read-Host)
+    Set-Content "$PSScriptRoot\user.cfg" -Value $username
+    return $username
+}
+
+Function Save-SharepointName {
+    $SP_UserName = $(Write-Host 'Please enter your Display Name as it appears in your Sharepoint profile. This is usually in the format "LastName, FirstName":' -ForegroundColor Yellow -BackgroundColor DarkGreen -NoNewLine; Read-Host)
+    Set-Content "$PSScriptRoot\sharepoint.cfg" -Value $SP_UserName
+    return $SP_UserName
+}
+
+# Check for username stored in config file, and if non-existent, prompt and create file
+$username = ''
+if (Test-Path "$PSScriptRoot\user.cfg") {
+    $username = Get-Content "$PSScriptRoot\user.cfg"
+} else {
+    $username = Save-UserName
+}
+# Validate length of User Name, and re-prompt if invalid
+if ($username.Length -lt 8){
+    $username = Save-UserName
+}
+
+$SP_UserName = '' 
+if (Test-Path "$PSScriptRoot\sharepoint.cfg") {
+    $SP_UserName = Get-Content "$PSScriptRoot\sharepoint.cfg"
+} else {
+    $SP_UserName = Save-SharepointName
+}
+# Validate length of User Name, and re-prompt if invalid
+if ($SP_UserName.Length -lt 5){
+    $SP_UserName = Save-SharepointName
+}
+
+#Check whether the PnP.Powershell module is installed, and install it if not
+if (!(Get-Module -ListAvailable -Name "PnP.Powershell")){
+    Write-Host "Installing Sharepoint Powershell module..."
+    Install-Module -Name "PnP.PowerShell"
+    Write-Host "Sharepoint Powershell module installed..."
+}
 
 $camlQuery = "<View><Query><Where><Neq><FieldRef Name='Sync_x0020_Status'/><Value Type='Choice'>Synced</Value></Neq></Where></Query><ViewFields><FieldRef Name='ID'/><FieldRef Name='Title'/><FieldRef Name='Description'/><FieldRef Name='SFDC_x0020_ID'/><FieldRef Name='Task_x0020_Type'/><FieldRef Name='WS_x0020_Focus'/><FieldRef Name='Task_x0020_Date'/><FieldRef Name='Sync_x0020_Status'/><FieldRef Name='Author'/><FieldRef Name='SFDC_Internal_ID'/></ViewFields></View>"
 # ====================================================== End Variables ===================================================================
-
+$SPConnection = $null
 Write-Host "========== Testing Sharepoint connection ===========" -ForegroundColor White
 try {
     # First try to get list item from cached connection
-    Get-PnPListItem -List $ListName -Id 6 > $null
-    Write-Host "=> Connection successful..." -ForegroundColor Green
+    $SPConnection = Get-PnPConnection | Out-Null
+    Write-Host "=> Conection successful..." -ForegroundColor Green
     Write-Host "====================================================" -ForegroundColor White
 }
 catch {
     Write-Host "Reconnecting to Sharepoint..." -ForegroundColor Yellow
     #Connect to PnP Online if above fails
-    Connect-PnPOnline -Url $SiteURL -UseWebLogin
+    $SPConnection = Connect-PnPOnline -Url $SiteURL -UseWebLogin | Out-Null
+    Write-Host "=> Conection successful..." -ForegroundColor Green
     Write-Host "====================================================" -ForegroundColor White
 }
 
@@ -43,7 +78,7 @@ $Counter = 0
 
 #PageSize:The number of items to retrieve per page request
 #$ListItems = Get-PnPListItem -List $ListName -Fields $SelectedFields 
-$ListItems = Get-PnPListItem -List $ListName -Query $camlQuery
+$ListItems = Get-PnPListItem -List $ListName -Query $camlQuery -Connection $SPConnection
 Write-Host "Retrieved $($ListItems.Count) UNSYNCHRONIZED SP Task(s)..."
 #Get all items from list
 $itemsUpdated = 0
@@ -123,15 +158,23 @@ $ListItems | ForEach-Object {
         $taskId = $($task.result.Id)
         $updates = @{"Sync_x0020_Status" = "Synced"; "SFDC_x0020_Task_x0020_Link" = "https://dell.lightning.force.com/lightning/r/Task/$taskId/view" }
        
-        Set-PnPListItem -List $ListName -Identity $ListRow.ID -Values $updates > $null
+        Set-PnPListItem -List $ListName -Identity $ListRow.ID -Values $updates -Connection $SPConnection > $null
         Write-Host "==> Sharepoint Task Item for Opp [$dealId] updated..." -ForegroundColor Green
         $itemsUpdated++
     }
     else {
-        Write-Host "-################  ERROR  #################-" -ForegroundColor Red
+        Write-Host "-###############################  ERROR  #####################################-" -ForegroundColor Red
         Write-Host "-- There was an error creating your task! --" -ForegroundColor Red
-        Write-Host "------------- Please try again -------------" -ForegroundColor Red
-        Write-Host "-##########################################-" -ForegroundColor Red
+        Write-Host "This is usually due to one of the following reasons:" -ForegroundColor Yellow
+        Write-Host "1. The Task entry in Sharepoint is missing SFDC connection data." -ForegroundColor Yellow
+        Write-Host "   This happens if you created a task against an unsynced Tracker opportunity." -ForegroundColor Yellow
+        Write-Host "   To fix this, make sure that the Tracker opportunity is synced against SFDC." -ForegroundColor Yellow
+        Write-Host "   Then, delete the Task (from Sharepoint) and recreate it through the Tracker." -ForegroundColor Yellow
+        Write-Host "2. You don't have access to the associated SFDC opportunity for this task." -ForegroundColor Yellow
+        Write-Host "3. The SFDC Opportunity is closed or no longer exists." -ForegroundColor Yellow
+        Write-Host "4. Occasionally, SFDC has a moment, and the API call fails. In this case," -ForegroundColor Yellow
+        Write-Host "------------------------------ Please try again ------------------------------" -ForegroundColor Red
+        Write-Host "-############################################################################-" -ForegroundColor Red
     }
    
     Write-Host "==----------------------------##  End [$dealId]  ##----------------------------==" -ForegroundColor White
@@ -140,6 +183,6 @@ $ListItems | ForEach-Object {
 Write-Host "===================== Begin SUMMARY ======================" -ForegroundColor Gray
 Write-Host "==> Items processed: $($ListItems.Count), Items updated: $itemsUpdated" -ForegroundColor Green
 Write-Host "========================== DONE ==========================" -ForegroundColor Gray
-Write-Host "*** Note: if you see warnings about SFDX being out-of-date, open an Administrator Powershell window, and type 'sfdx update'" -ForegroundColor White
+Write-Host "*** Note: if you see warnings about SF being out-of-date, open an Administrator Powershell window, and type 'sfdx update'" -ForegroundColor White
 Read-Host -Prompt "Press Enter to exit"
 exit

@@ -3,12 +3,8 @@
 # Purpose: Create SFDC tasks quickly and easily                                                                              #
 # ############################################################################################################################
 
-# Variables for settings
-
-# Enter your SSO email address used in SFDC, or your username
-$username = 'c_alleaume@dell.com' 
-# Customize this shortened task type list (ensuring that they match what's available in your SFDC instance)
-# This makes it easier to only display task types that are relevant to your daily tasks
+# Customize the shortened task type list ($taskTypes) below, ensuring that they match EXACTLY (case, punctuation, spaces, and spelling) how they're shown in the SFDC UI
+# This list makes it easier to only display common task types that are relevant to your task entries, instead of the whole extended list
 # Pay attention to the ordering and the colors used to display these tasks further down in this script
 
 $taskTypes = @('Internal Meeting - General',
@@ -20,6 +16,23 @@ $taskTypes = @('Internal Meeting - General',
     'Accelerator WS - Multi-Cloud')
 
 $default_bgcolor = (get-host).UI.RawUI.BackgroundColor
+
+Function Save-UserName {
+    $username = $(Write-Host "Please enter your email address as it appears in your SFDC Profile:" -ForegroundColor Yellow -BackgroundColor DarkGreen -NoNewLine; Read-Host)
+    Set-Content "$PSScriptRoot\user.cfg" -Value $username
+    return $username
+}
+
+# Check for username stored in config file, and if non-existent, prompt and create file
+$username = ''
+if (Test-Path "$PSScriptRoot\user.cfg") {
+    $username = Get-Content "$PSScriptRoot\user.cfg"
+} else {
+    $username = Save-UserName
+}
+if ($username.Length -lt 8){
+    $username = Save-UserName
+}
 
 Function Get-Tasks {
     Param ($fromDate)

@@ -4,13 +4,6 @@ Set-Item -Path Env:SFDX_HIDE_RELEASE_NOTES -Value $true
 Set-Item -Path Env:SFDX_HIDE_RELEASE_NOTES_FOOTER -Value $true
 Write-Host "Settings applied..."
 
-# #############~ Change these variables as necessary ~##############
-
-# Change below based on your SFDC user account:
-$username = 'c_alleaume@dell.com'
-
-# ###################~~~~~~~~~~~~~~~~################################
-
 
 $SiteUrl = "https://dell.sharepoint.com/sites/Pearlj1tech-Team"
 $ListName = "Presales Tracker"
@@ -35,15 +28,42 @@ catch {
     Write-Host "=> Conection successful..." -ForegroundColor Green
     Write-Host "====================================================" -ForegroundColor White
 }
+
+
+Function Save-UserName {
+    $username = $(Write-Host "Please enter your email address as it appears in your SFDC Profile:" -ForegroundColor Yellow -BackgroundColor DarkGreen -NoNewLine; Read-Host)
+    Set-Content "$PSScriptRoot\user.cfg" -Value $username
+    return $username
+}
+
+# Check for username stored in config file, and if non-existent, prompt and create file
+$username = ''
+if (Test-Path "$PSScriptRoot\user.cfg") {
+    $username = Get-Content "$PSScriptRoot\user.cfg"
+} else {
+    $username = Save-UserName
+}
+# Validate length of User Name, and re-prompt if invalid
+if ($username.Length -lt 8){
+    $username = Save-UserName
+}
+
+#Check whether the PnP.Powershell module is installed, and install it if not
+if (!(Get-Module -ListAvailable -Name "PnP.Powershell")){
+    Write-Host "Installing Sharepoint Powershell module..."
+    Install-Module -Name "PnP.PowerShell"
+    Write-Host "Sharepoint Powershell module installed..."
+}
+
 Clear-Host
 Write-Host " "
 
-Write-Host "Which items do you want to sync?" -NoNewLine -ForegroundColor Yellow -BackgroundColor DarkGreen
+Write-Host "Which Sharepoint Tracker Opportunities do you want to sync?" -NoNewLine -ForegroundColor Yellow -BackgroundColor DarkGreen
 Write-Host " " -BackgroundColor $default_bgcolor
-Write-Host "1. All Active Sharepoint Items" -ForegroundColor White
-Write-Host "2. Active Sharepoint Items created today" -ForegroundColor White
-Write-Host "3. Active Sharepoint Items created in the last 5 days" -ForegroundColor White
-Write-Host "4. Single Sharepoint Item by Opportunity ID" -ForegroundColor White
+Write-Host "1. All Active Sharepoint Opps" -ForegroundColor White
+Write-Host "2. Active Sharepoint Opps created today" -ForegroundColor White
+Write-Host "3. Active Sharepoint Opps created in the last 5 days" -ForegroundColor White
+Write-Host "4. Single Sharepoint Opp by Opportunity ID" -ForegroundColor White
 Write-Host " " -BackgroundColor $default_bgcolor
 $next = $(Write-Host "Choose an action (eg 1): " -ForegroundColor Yellow -BackgroundColor DarkGreen -NoNewLine; Read-Host)
 
@@ -86,12 +106,12 @@ $Counter = 0
 #PageSize:The number of items to retrieve per page request
 #$ListItems = Get-PnPListItem -List $ListName -Fields $SelectedFields 
 Write-Host " "
-Write-Host "Fetching Sharepoint Data..." -ForegroundColor White
+Write-Host "Fetching Sharepoint Tracker Opportunities..." -ForegroundColor White
 $ListItems = Get-PnPListItem -List $ListName -Query $camlQuery -Connection $SPConnection
 
 if ($ListItems -eq $null) {
     Write-Host "=====================================================" -ForegroundColor Red
-    Write-Host "- ERROR: No list items found matching your criteria." -ForegroundColor Red
+    Write-Host "- ERROR: No Sharepoint TRacker Opps found matching your criteria." -ForegroundColor Red
     Write-Host "=====================================================" -ForegroundColor Red
     Write-Host "Press Enter to exit..." -ForegroundColor White
     Read-Host
@@ -100,9 +120,9 @@ if ($ListItems -eq $null) {
 
 Write-Host "Retrieved " -NoNewline
 Write-Host "$($ListItems.Count)" -ForegroundColor Green -NoNewline
-Write-Host " Sharepoint List Items..." -ForegroundColor White
+Write-Host " Sharepoint Tracker Oppoprtunites..." -ForegroundColor White
 Write-Host " "
-#Get all items from list
+
 $itemsUpdated = 0
 $lostItems = @()
 $wonItems = @()
@@ -288,8 +308,8 @@ Write-Host " "
 Write-Host "==> Process completed on $(Get-Date)" -ForegroundColor White
 Write-Host " "
 Write-Host "================================================- DONE -================================================" -ForegroundColor Green
-#Write-Host "*** Note: if you see warnings about SFDX being out-of-date, open an Administrator Powershell window, and type 'sfdx update'" -ForegroundColor White
+Write-Host "*** Note: if you see warnings about SF being out-of-date, open an Administrator Powershell window, and type 'sfdx update'" -ForegroundColor White
 Write-Host " "
-Read-Host -Prompt "Press Enter to Synchronize SP Tasks next..."
+Read-Host -Prompt "Press Enter to Synchronize Sharepoint SP Tasks to SFDC next, or CTRL+C to exit..."
 & "$PSScriptRoot\sfdc_sync_tasks.ps1"
 # exit
