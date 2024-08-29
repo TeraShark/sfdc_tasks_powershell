@@ -18,23 +18,18 @@ As opposed to navigating through the SFDC Web UI, these scripts allow you to sim
     - If you get a prompt requesting credentials when you select "Run as Administrator", you'll need to submit a request to elevate your "BeyondTrust" permissions through IT. 
 2. You will also need the following installed and configured in order to run the SFDC-related scripts in this repo:
     - PowerShell 7.x ([download here, from the official github repo](https://github.com/PowerShell/powershell/releases))
-    - Sharepoint PnP PowerShell module
-        - Once PowerShell 7 is installed, install the PnP module by running this command in a PowerShell terminal:  
-        `Install-Module PnP.PowerShell`
     - SFDC CLI ([download here, from Salesforce](https://developer.salesforce.com/tools/salesforcecli))
 
 ### Setup and configuration
-1. At the top of each `.ps1` script file (within the first few lines, where variables are instantiated), ensure that your email address for SFDC is listed as the value for `$username`. 
-    - NO PASSWORDS!
-2. In the 'sfdc_create_task.ps1' script (if you plan on using this script), customize the list of task types (`$taskTypes`) in the task script to match your most commonly used types, ensuring that they match **exactly** what is listed in your SFDC UI instance.
-3. Open a Powershell 7 terminal **as an Administrator**, and execute this command:  
+1. In the 'sfdc_create_task.ps1' script (if you plan on using this script), customize the list of task types (`$taskTypes`) in the task script to match your most commonly used types, ensuring that they match **exactly** what is listed in your SFDC UI instance.
+2. Open a Powershell 7 terminal **as an Administrator**, and execute this command:  
 `Set-ExecutionPolicy Unrestricted`
-4. Open a new, regular (**non-admin**) Powershell 7 terminal, and execute this command:  
+3. Open a new, regular (**non-admin**) Powershell 7 terminal, and execute this command:  
 `sfdx force:auth:web:login -a dell`
     - This will open a web browser window and prompt you for permission to access the SFDC API, using your SSO credentials - this creates a token for subsequent calls to SFDC. 
     - Follow the sign-in prompts, and once you've signed in successfully, close the browser tab. In the Powershell terminal, you should see a message indicating that your token has been stored - this means you're good to go :-)
     - *No SSO sign-in?* If you see a regular, non-Dell Salesforce sign-in page, there should be a link towrds the bottom of that page for a custom domain. Click the link, and enter `dell` when the prompt comes up, then follow the sign-in process as denoted above.
-4. **(*Optional | recommended*)** Create a Desktop or Taskbar shortcut to the script and customize the icon for ease of access.
+4. (***Optional | recommended***) Create a Desktop or Taskbar shortcut to the script and customize the icon for ease of access.
     * To create a shortcut, simply right-click an open space on your Desktop, select "New -> Shortcut".
     * For the path, you will need to specify the path to Powershell, followed by the path to the relevant `sfdc_script.ps1` script. 
         * Eg. `"C:\Program Files\PowerShell\7\pwsh.exe" -WorkingDirectory ~ "<path to your>\sfdc_script.ps1">`
