@@ -5,7 +5,7 @@ Set-Item -Path Env:SFDX_HIDE_RELEASE_NOTES_FOOTER -Value $true
 Write-Host "Settings applied..."
 
 
-$SiteUrl = "https://dell.sharepoint.com/sites/Pearlj1tech-Team"
+$SiteUrl = "https://dell.sharepoint.com/sites/DevOpsCloud-NativeSPEAR"
 $ListName = "Presales Tracker"
 #InternalName of the selected fields
 $SelectedFields = @("ID", "Title", "Description", "SFDC_x0020_ID", "TCV_x0020__x0024_", "Est_x002e__x0020_Close", "SFDCLink", "Categories", "PrimaryContact", "Sector")
@@ -18,14 +18,14 @@ Write-Host "========== Testing Sharepoint connection ===========" -ForegroundCol
 try {
     # First try to get list item from cached connection
     $SPConnection = Get-PnPConnection | Out-Null
-    Write-Host "=> Conection successful..." -ForegroundColor Green
+    Write-Host "=> Connection successful..." -ForegroundColor Green
     Write-Host "====================================================" -ForegroundColor White
 }
 catch {
     Write-Host "Reconnecting to Sharepoint..." -ForegroundColor Yellow
     #Connect to PnP Online if above fails
     $SPConnection = Connect-PnPOnline -Url $SiteURL -UseWebLogin | Out-Null
-    Write-Host "=> Conection successful..." -ForegroundColor Green
+    Write-Host "=> Connection successful..." -ForegroundColor Green
     Write-Host "====================================================" -ForegroundColor White
 }
 

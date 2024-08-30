@@ -6,7 +6,7 @@ Set-Item -Path Env:SFDX_HIDE_RELEASE_NOTES -Value $true
 Set-Item -Path Env:SFDX_HIDE_RELEASE_NOTES_FOOTER -Value $true
 Write-Host "Settings applied..."
 # ====================================================== Set Variables =================================================================
-$SiteUrl = "https://dell.sharepoint.com/sites/Pearlj1tech-Team"
+$SiteUrl = "https://dell.sharepoint.com/sites/DevOpsCloud-NativeSPEAR"
 $ListName = "SP Tasks"
 #InternalName of the selected fields
 $SelectedFields = @("ID", "Title", "Description", "SFDC_x0020_ID", "Task_x0020_Type", "WS_x0020_Focus", "Task_x0020_Date", "Sync_x0020_Status", "Author", "SFDC_Internal_ID")
