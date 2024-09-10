@@ -36,7 +36,16 @@ Function Save-UserName {
     return $username
 }
 
+#Check whether the PnP.Powershell module is installed, and install it if not
+Write-Host "Checking Sharepoint [PnP.PowerShell] module..."
+if (!(Get-Module -ListAvailable -Name "PnP.Powershell")){
+    Write-Host "Installing Sharepoint Powershell module..."
+    Install-Module -Name "PnP.PowerShell"
+    Write-Host "Sharepoint Powershell module installed..."
+}
+
 # Check for username stored in config file, and if non-existent, prompt and create file
+Write-Host "Checking user configuration..."
 $username = ''
 if (Test-Path "$PSScriptRoot\user.cfg") {
     $username = Get-Content "$PSScriptRoot\user.cfg"
@@ -48,13 +57,10 @@ if ($username.Length -lt 8){
     $username = Save-UserName
 }
 
-#Check whether the PnP.Powershell module is installed, and install it if not
-if (!(Get-Module -ListAvailable -Name "PnP.Powershell")){
-    Write-Host "Installing Sharepoint Powershell module..."
-    Install-Module -Name "PnP.PowerShell"
-    Write-Host "Sharepoint Powershell module installed..."
-}
+Write-Host "=> Validation successful. Loading menu..." -ForegroundColor Green
+Write-Host "====================================================" -ForegroundColor White
 
+Start-Sleep -Seconds 2
 Clear-Host
 Write-Host " "
 
