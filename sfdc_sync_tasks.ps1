@@ -82,6 +82,8 @@ $ListItems = Get-PnPListItem -List $ListName -Query $camlQuery -Connection $SPCo
 Write-Host "Retrieved $($ListItems.Count) UNSYNCHRONIZED SP Task(s)..."
 #Get all items from list
 $itemsUpdated = 0
+Write-Progress -PercentComplete (0 / 1 * 100) -Activity "Syncing Tasks to SFDC..." -Status  "Processing Items..."
+$syncError = $false
 
 $ListItems | ForEach-Object {
     $ListItem = Get-PnPProperty -ClientObject $_ -Property FieldValuesAsText
@@ -163,23 +165,32 @@ $ListItems | ForEach-Object {
         $itemsUpdated++
     }
     else {
+        $syncError = $true
         Write-Host "-###############################  ERROR  #####################################-" -ForegroundColor Red
         Write-Host "-- There was an error creating your task! --" -ForegroundColor Red
-        Write-Host "This is usually due to one of the following reasons:" -ForegroundColor Yellow
-        Write-Host "1. The Task entry in Sharepoint is missing SFDC connection data." -ForegroundColor Yellow
-        Write-Host "   This happens if you created a task against an unsynced Tracker opportunity." -ForegroundColor Yellow
-        Write-Host "   To fix this, make sure that the Tracker opportunity is synced against SFDC." -ForegroundColor Yellow
-        Write-Host "   Then, delete the Task (from Sharepoint) and recreate it through the Tracker." -ForegroundColor Yellow
-        Write-Host "2. You don't have access to the associated SFDC opportunity for this task." -ForegroundColor Yellow
-        Write-Host "3. The SFDC Opportunity is closed or no longer exists." -ForegroundColor Yellow
-        Write-Host "4. Occasionally, SFDC has a moment, and the API call fails. In this case," -ForegroundColor Yellow
-        Write-Host "------------------------------ Please try again ------------------------------" -ForegroundColor Red
         Write-Host "-############################################################################-" -ForegroundColor Red
     }
    
     Write-Host "==----------------------------##  End [$dealId]  ##----------------------------==" -ForegroundColor White
 
 }
+
+if ($syncError -eq $true){
+    Write-Host "-###############################  ERROR  #####################################-" -ForegroundColor Red
+    Write-Host "-- There were errors creating tasks --" -ForegroundColor Red
+    Write-Host "This is usually due to one of the following reasons:" -ForegroundColor Yellow
+    Write-Host "1. The Task entry in Sharepoint is missing SFDC connection data." -ForegroundColor Yellow
+    Write-Host "   This happens if you created a task against an unsynced Tracker opportunity." -ForegroundColor Yellow
+    Write-Host "   To fix this, make sure that the Tracker opportunity is synced against SFDC." -ForegroundColor Yellow
+    Write-Host "   Then, delete the Task (from Sharepoint) and recreate it through the Tracker." -ForegroundColor Yellow
+    Write-Host "2. You don't have access to the associated SFDC opportunity for this task." -ForegroundColor Yellow
+    Write-Host "3. The SFDC Opportunity is closed or no longer exists." -ForegroundColor Yellow
+    Write-Host "4. Occasionally, SFDC has a moment, and the API call fails. In this case," -ForegroundColor Yellow
+    Write-Host "------------------------------ Please try again ------------------------------" -ForegroundColor Red
+    Write-Host "-############################################################################-" -ForegroundColor Red
+
+}
+
 Write-Host "===================== Begin SUMMARY ======================" -ForegroundColor Gray
 Write-Host "==> Items processed: $($ListItems.Count), Items updated: $itemsUpdated" -ForegroundColor Green
 Write-Host "========================== DONE ==========================" -ForegroundColor Gray
