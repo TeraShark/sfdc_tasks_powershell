@@ -63,14 +63,14 @@ Write-Host "========== Testing Sharepoint connection ===========" -ForegroundCol
 try {
     # First try to get list item from cached connection
     $SPConnection = Get-PnPConnection | Out-Null
-    Write-Host "=> Conection successful..." -ForegroundColor Green
+    Write-Host "=> Connection successful..." -ForegroundColor Green
     Write-Host "====================================================" -ForegroundColor White
 }
 catch {
     Write-Host "Reconnecting to Sharepoint..." -ForegroundColor Yellow
     #Connect to PnP Online if above fails
     $SPConnection = Connect-PnPOnline -Url $SiteURL -UseWebLogin | Out-Null
-    Write-Host "=> Conection successful..." -ForegroundColor Green
+    Write-Host "=> Connection successful..." -ForegroundColor Green
     Write-Host "====================================================" -ForegroundColor White
 }
 
@@ -104,6 +104,7 @@ $ListItems | ForEach-Object {
     $customDate = [datetime]::ParseExact($inDate, 'M/d/yyyy', $null)
     $taskDate = $customDate.ToString("yyyy-MM-dd")
     $author = $($ListRow.Author)
+    
     # $taskDateTime = $customDate.ToUniversalTime().ToString( "yyyy-MM-ddTHH:mm:ss.fffffffZ" )
     $wsFocus = $($ListRow.WS_x0020_Focus)
     
@@ -112,63 +113,70 @@ $ListItems | ForEach-Object {
     Write-Host "============================-->> Begin [$dealId] <<--============================" -ForegroundColor White
     $start = (Get-Date)  
     Write-Host "==> Fetching Opportunity [$dealId] ($cust)..." -ForegroundColor Cyan
-    $opp = sfdx force:data:soql:query -u "$username" --query "SELECT ID, Name FROM Opportunity WHERE Deal_ID__c='$dealId'" --json | ConvertFrom-Json
+    $opp = sfdx force:data:soql:query -o "$username" --query "SELECT ID, Name FROM Opportunity WHERE Deal_ID__c='$dealId'" --json | ConvertFrom-Json
     $finish = (Get-Date)   
     Write-Host ">>> Query Time: $(New-TimeSpan -Start $start -End $finish)" -ForegroundColor Gray
     $oppId = $opp.result.records.Id
     $oppName = $opp.result.records.Name
     
-    Write-Host "==> Creating Task [$taskType] for [$author] Opportunity [$dealId] [($cust) - $oppName]..." -ForegroundColor Cyan
-    # $username = "c_alleaume@dell.com"
-    $ownerId = "0054v00000CnhM7AAJ" # Chris Alleaume's SFDC Internal User ID
-    if ($author.Contains("Demarrais")){
-        # $username = "karl.demarrais@dell.com"
-        $ownerId = "0054v00000EVZRqAAP" # Karl's SFDC Internal User ID (0054v00000EVZRqAAP)
-    }
-
-    $start = (Get-Date)
-    $safeTaskDesc = [System.Web.HttpUtility]::UrlEncode("$taskDesc")
-    if ($wsFocus.Contains("None")){
-        Write-Host "Command params: Subject='Services' Description='$taskDesc' Status='Completed' Priority='Normal' ActivityDate='$taskDate' WhatId='$oppId' IsReminderSet=false TaskSubtype='Task' Type='$taskType' OwnerId=$ownerId"
-        $result = sfdx force:data:record:create -s Task -v "Subject='Services' Description='$safeTaskDesc' Status='Completed' Priority='Normal' ActivityDate='$taskDate' WhatId='$oppId' IsReminderSet=false TaskSubtype='Task' Type='$taskType' OwnerId=$ownerId ReminderDateTime='$taskDateTime'" -u "$username" --json --loglevel debug
-        # $task = sf data create record --sobject Task --values "Subject='Services' Description='$taskDesc' Status='Completed' Priority='Normal' Workshop_Focus__c='$wsFocus' ActivityDate='$taskDate' WhatId=$oppId IsReminderSet=false TaskSubtype='Task' Type='$taskType' OwnerId=$ownerId ReminderDateTime='$taskDateTime'" -u "$username" --json | ConvertFrom-Json    
-    } else {
-        Write-Host "Command params: Subject='Services' Description='$taskDesc' Status='Completed' Priority='Normal' ActivityDate='$taskDate' WhatId='$oppId' IsReminderSet=false TaskSubtype='Task' Type='$taskType' OwnerId=$ownerId"
-        $result = sfdx force:data:record:create -s Task -v "Subject='Services' Description='$safeTaskDesc' Status='Completed' Priority='Normal' Workshop_Focus__c='$wsFocus' ActivityDate='$taskDate' WhatId='$oppId' IsReminderSet=false TaskSubtype='Task' Type='$taskType' OwnerId=$ownerId ReminderDateTime='$taskDateTime'" -u "$username" --json --loglevel debug
-        # $result
-    }
-    
-    $task = $result | ConvertFrom-Json
-    # Write-Host ($task | Format-Table | Out-String)
-
-    $finish = (Get-Date)   
-    Write-Host ">>> Query Time: $(New-TimeSpan -Start $start -End $finish)" -ForegroundColor Gray
-
-    if ($task.result.success -eq 'True') {
-        Write-Host "Task [" -ForegroundColor Green -NoNewline
-        Write-Host "$taskType" -ForegroundColor Yellow -NoNewline
-        Write-Host "] created successfully" -ForegroundColor Green
-        Write-Host "Task ID: " -ForegroundColor Green -NoNewline
-        Write-Host "$($task.result.Id)" -ForegroundColor Yellow
-        Write-Host "Account Name: " -ForegroundColor Green -NoNewline
-        Write-Host "$cust" -ForegroundColor Yellow
-        Write-Host "Task Description: " -ForegroundColor Green -NoNewline
-        Write-Host "$taskDesc" -ForegroundColor Yellow
-        Write-Host "Deal ID: " -ForegroundColor Green -NoNewline
-        Write-Host "$dealId" -ForegroundColor Yellow
-
-        $taskId = $($task.result.Id)
-        $updates = @{"Sync_x0020_Status" = "Synced"; "SFDC_x0020_Task_x0020_Link" = "https://dell.lightning.force.com/lightning/r/Task/$taskId/view" }
-       
-        Set-PnPListItem -List $ListName -Identity $ListRow.ID -Values $updates -Connection $SPConnection > $null
-        Write-Host "==> Sharepoint Task Item for Opp [$dealId] updated..." -ForegroundColor Green
-        $itemsUpdated++
-    }
-    else {
+    $authorEmail = $_.FieldValues.Author.Email
+    if ($oppId -eq $null -or $oppId.length -eq 0){
         $syncError = $true
         Write-Host "-###############################  ERROR  #####################################-" -ForegroundColor Red
-        Write-Host "-- There was an error creating your task! --" -ForegroundColor Red
-        Write-Host "-############################################################################-" -ForegroundColor Red
+        Write-Host " ------------ Error looking up Opportunity [$dealId] in SFDC ----------------" -ForegroundColor Yellow
+        Write-Host "-#############################################################################-" -ForegroundColor Red
+    }
+    else {
+        # Fetch the relevant task owner's userId from SalesForce
+        $sfUser = sf data get record -o "$username" --sobject User --where "Username=$authorEmail" --json | ConvertFrom-Json
+        $ownerId = $sfUser.result.Id
+
+        Write-Host "==> Creating Task [$taskType] for [$author] against Opportunity [$dealId] [($cust) - $oppName]..." -ForegroundColor Cyan
+        
+        $start = (Get-Date)
+        $safeTaskDesc = [System.Web.HttpUtility]::UrlEncode("$taskDesc")
+        if ($wsFocus.Contains("None")){
+            Write-Host "Command params: Subject='Services' Description='$taskDesc' Status='Completed' Priority='Normal' ActivityDate='$taskDate' WhatId='$oppId' IsReminderSet=false TaskSubtype='Task' Type='$taskType' OwnerId=$ownerId"
+            $result = sfdx force:data:record:create -s Task -v "Subject='Services' Description='$safeTaskDesc' Status='Completed' Priority='Normal' ActivityDate='$taskDate' WhatId='$oppId' IsReminderSet=false TaskSubtype='Task' Type='$taskType' OwnerId=$ownerId ReminderDateTime='$taskDateTime'" -u "$username" --json --loglevel debug
+            # $task = sf data create record --sobject Task --values "Subject='Services' Description='$taskDesc' Status='Completed' Priority='Normal' Workshop_Focus__c='$wsFocus' ActivityDate='$taskDate' WhatId=$oppId IsReminderSet=false TaskSubtype='Task' Type='$taskType' OwnerId=$ownerId ReminderDateTime='$taskDateTime'" -u "$username" --json | ConvertFrom-Json    
+        } else {
+            Write-Host "Command params: Subject='Services' Description='$taskDesc' Status='Completed' Priority='Normal' ActivityDate='$taskDate' WhatId='$oppId' IsReminderSet=false TaskSubtype='Task' Type='$taskType' OwnerId=$ownerId"
+            $result = sfdx force:data:record:create -s Task -v "Subject='Services' Description='$safeTaskDesc' Status='Completed' Priority='Normal' Workshop_Focus__c='$wsFocus' ActivityDate='$taskDate' WhatId='$oppId' IsReminderSet=false TaskSubtype='Task' Type='$taskType' OwnerId=$ownerId ReminderDateTime='$taskDateTime'" -u "$username" --json --loglevel debug
+            # $result
+        }
+        
+        $task = $result | ConvertFrom-Json
+        # Write-Host ($task | Format-Table | Out-String)
+
+        $finish = (Get-Date)   
+        Write-Host ">>> Query Time: $(New-TimeSpan -Start $start -End $finish)" -ForegroundColor Gray
+
+        if ($task.result.success -eq 'True') {
+            Write-Host "Task [" -ForegroundColor Green -NoNewline
+            Write-Host "$taskType" -ForegroundColor Yellow -NoNewline
+            Write-Host "] created successfully" -ForegroundColor Green
+            Write-Host "Task ID: " -ForegroundColor Green -NoNewline
+            Write-Host "$($task.result.Id)" -ForegroundColor Yellow
+            Write-Host "Account Name: " -ForegroundColor Green -NoNewline
+            Write-Host "$cust" -ForegroundColor Yellow
+            Write-Host "Task Description: " -ForegroundColor Green -NoNewline
+            Write-Host "$taskDesc" -ForegroundColor Yellow
+            Write-Host "Deal ID: " -ForegroundColor Green -NoNewline
+            Write-Host "$dealId" -ForegroundColor Yellow
+
+            $taskId = $($task.result.Id)
+            $updates = @{"Sync_x0020_Status" = "Synced"; "SFDC_x0020_Task_x0020_Link" = "https://dell.lightning.force.com/lightning/r/Task/$taskId/view" }
+        
+            Set-PnPListItem -List $ListName -Identity $ListRow.ID -Values $updates -Connection $SPConnection > $null
+            Write-Host "==> Sharepoint Task Item for Opp [$dealId] updated..." -ForegroundColor Green
+            $itemsUpdated++
+        }
+        else {
+            $syncError = $true
+            Write-Host "-###############################  ERROR  #####################################-" -ForegroundColor Red
+            Write-Host " ------- Error encountered while attempting to create your task in SFDC ------" -ForegroundColor Yellow
+            Write-Host "-#############################################################################-" -ForegroundColor Red
+        }
     }
    
     Write-Host "==----------------------------##  End [$dealId]  ##----------------------------==" -ForegroundColor White
@@ -176,24 +184,25 @@ $ListItems | ForEach-Object {
 }
 
 if ($syncError -eq $true){
-    Write-Host "-###############################  ERROR  #####################################-" -ForegroundColor Red
-    Write-Host "-- There were errors creating tasks --" -ForegroundColor Red
-    Write-Host "This is usually due to one of the following reasons:" -ForegroundColor Yellow
+    Write-Host "-###############################  ERRORS  ####################################-" -ForegroundColor Red
+    Write-Host " ---- There were errors encountered while attempting to create SFDC tasks ----" -ForegroundColor Red
+    Write-Host "This is typically due to one of the following reasons:" -ForegroundColor Yellow
     Write-Host "1. The Task entry in Sharepoint is missing SFDC connection data." -ForegroundColor Yellow
     Write-Host "   This happens if you created a task against an unsynced Tracker opportunity." -ForegroundColor Yellow
     Write-Host "   To fix this, make sure that the Tracker opportunity is synced against SFDC." -ForegroundColor Yellow
     Write-Host "   Then, delete the Task (from Sharepoint) and recreate it through the Tracker." -ForegroundColor Yellow
-    Write-Host "2. You don't have access to the associated SFDC opportunity for this task." -ForegroundColor Yellow
-    Write-Host "3. The SFDC Opportunity is closed or no longer exists." -ForegroundColor Yellow
-    Write-Host "4. Occasionally, SFDC has a moment, and the API call fails. In this case," -ForegroundColor Yellow
-    Write-Host "------------------------------ Please try again ------------------------------" -ForegroundColor Red
-    Write-Host "-############################################################################-" -ForegroundColor Red
+    Write-Host "   Finally, re-run this sync script to try again." -ForegroundColor Yellow
+    Write-Host "2. You don't have access to the associated SFDC Opportunity for this task." -ForegroundColor Yellow
+    Write-Host "3. The associated SFDC Opportunity is closed or no longer exists." -ForegroundColor Yellow
+    Write-Host "4. Occasionally, SFDC has a moment, and the API call fails or times out." -ForegroundColor Yellow
+    Write-Host "   In this case, trying again a few minutes later tends to do the trick." -ForegroundColor Yellow
+    Write-Host "-#############################################################################-" -ForegroundColor Red
 
 }
 
 Write-Host "===================== Begin SUMMARY ======================" -ForegroundColor Gray
 Write-Host "==> Items processed: $($ListItems.Count), Items updated: $itemsUpdated" -ForegroundColor Green
 Write-Host "========================== DONE ==========================" -ForegroundColor Gray
-Write-Host "*** Note: if you see warnings about SF being out-of-date, open an Administrator Powershell window, and type 'sfdx update'" -ForegroundColor White
+Write-Host "*** Note: if you see warnings about SF being out-of-date, open an Administrator Powershell window, and type 'sf update'" -ForegroundColor White
 Read-Host -Prompt "Press Enter to exit"
 exit

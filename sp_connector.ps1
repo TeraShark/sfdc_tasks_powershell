@@ -60,7 +60,7 @@ if ($username.Length -lt 8){
 Write-Host "=> Validation successful. Loading menu..." -ForegroundColor Green
 Write-Host "====================================================" -ForegroundColor White
 
-Start-Sleep -Seconds 2
+Start-Sleep -Seconds 1
 Clear-Host
 Write-Host " "
 
@@ -116,9 +116,9 @@ Write-Host "Fetching Sharepoint Tracker Opportunities..." -ForegroundColor White
 $ListItems = Get-PnPListItem -List $ListName -Query $camlQuery -Connection $SPConnection
 
 if ($ListItems -eq $null) {
-    Write-Host "=====================================================" -ForegroundColor Red
-    Write-Host "- ERROR: No Sharepoint TRacker Opps found matching your criteria." -ForegroundColor Red
-    Write-Host "=====================================================" -ForegroundColor Red
+    Write-Host "=================================================================" -ForegroundColor Red
+    Write-Host "- ERROR: No Sharepoint Tracker Opps found matching your criteria." -ForegroundColor Red
+    Write-Host "=================================================================" -ForegroundColor Red
     Write-Host "Press Enter to exit..." -ForegroundColor White
     Read-Host
     Exit
