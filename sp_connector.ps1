@@ -169,7 +169,7 @@ $ListItems | ForEach-Object {
 
         # Write-Host  "======================  Debug: Start  ======================" # (Debug)
         # Write-Host "Getting Opp JSON from SFDC..." # (Debug)
-        $oppJson = sfdx force:data:soql:query -u "$username" --query "SELECT ID, Name, Account.Name, AccountId, Amount, Unweighted_Rev_Services_Only__c, Weighted_Rev_Services_Only__c, Fiscal_Book_Date__c, StageName, Probability, NextStep, Services_Comments__c, Decision_Process__c, Decision_Criteria__c, Metrics__c, Identify_Value_Drivers__c, Campaign__c, Services_Sales_Owner__r.Name, SP_Name__r.Name, CloseDate, IsWon, IsClosed FROM Opportunity WHERE Deal_ID__c='$($dealId.Trim())'" --json
+        $oppJson = sfdx force:data:soql:query -o "$username" --query "SELECT ID, Name, Account.Name, AccountId, Amount, Unweighted_Rev_Services_Only__c, Weighted_Rev_Services_Only__c, Fiscal_Book_Date__c, StageName, Probability, NextStep, Services_Comments__c, Decision_Process__c, Decision_Criteria__c, Metrics__c, Identify_Value_Drivers__c, Campaign__c, Services_Sales_Owner__r.Name, SP_Name__r.Name, CloseDate, IsWon, IsClosed FROM Opportunity WHERE Deal_ID__c='$($dealId.Trim())'" --json
         # $oppJson # (Debug)
         # Write-Host "Parsing JSON from SFDC into PowerShell object..." # (Debug)
         $opp = $oppJson | ConvertFrom-Json

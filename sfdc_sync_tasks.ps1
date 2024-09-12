@@ -137,11 +137,11 @@ $ListItems | ForEach-Object {
         $safeTaskDesc = [System.Web.HttpUtility]::UrlEncode("$taskDesc")
         if ($wsFocus.Contains("None")){
             Write-Host "Command params: Subject='Services' Description='$taskDesc' Status='Completed' Priority='Normal' ActivityDate='$taskDate' WhatId='$oppId' IsReminderSet=false TaskSubtype='Task' Type='$taskType' OwnerId=$ownerId"
-            $result = sfdx force:data:record:create -s Task -v "Subject='Services' Description='$safeTaskDesc' Status='Completed' Priority='Normal' ActivityDate='$taskDate' WhatId='$oppId' IsReminderSet=false TaskSubtype='Task' Type='$taskType' OwnerId=$ownerId ReminderDateTime='$taskDateTime'" -u "$username" --json --loglevel debug
-            # $task = sf data create record --sobject Task --values "Subject='Services' Description='$taskDesc' Status='Completed' Priority='Normal' Workshop_Focus__c='$wsFocus' ActivityDate='$taskDate' WhatId=$oppId IsReminderSet=false TaskSubtype='Task' Type='$taskType' OwnerId=$ownerId ReminderDateTime='$taskDateTime'" -u "$username" --json | ConvertFrom-Json    
+            $result = sfdx force:data:record:create -s Task -v "Subject='Services' Description='$safeTaskDesc' Status='Completed' Priority='Normal' ActivityDate='$taskDate' WhatId='$oppId' IsReminderSet=false TaskSubtype='Task' Type='$taskType' OwnerId=$ownerId ReminderDateTime='$taskDateTime'" -o "$username" --json --loglevel debug
+            # $task = sf data create record --sobject Task --values "Subject='Services' Description='$taskDesc' Status='Completed' Priority='Normal' Workshop_Focus__c='$wsFocus' ActivityDate='$taskDate' WhatId=$oppId IsReminderSet=false TaskSubtype='Task' Type='$taskType' OwnerId=$ownerId ReminderDateTime='$taskDateTime'" -o "$username" --json | ConvertFrom-Json    
         } else {
             Write-Host "Command params: Subject='Services' Description='$taskDesc' Status='Completed' Priority='Normal' ActivityDate='$taskDate' WhatId='$oppId' IsReminderSet=false TaskSubtype='Task' Type='$taskType' OwnerId=$ownerId"
-            $result = sfdx force:data:record:create -s Task -v "Subject='Services' Description='$safeTaskDesc' Status='Completed' Priority='Normal' Workshop_Focus__c='$wsFocus' ActivityDate='$taskDate' WhatId='$oppId' IsReminderSet=false TaskSubtype='Task' Type='$taskType' OwnerId=$ownerId ReminderDateTime='$taskDateTime'" -u "$username" --json --loglevel debug
+            $result = sfdx force:data:record:create -s Task -v "Subject='Services' Description='$safeTaskDesc' Status='Completed' Priority='Normal' Workshop_Focus__c='$wsFocus' ActivityDate='$taskDate' WhatId='$oppId' IsReminderSet=false TaskSubtype='Task' Type='$taskType' OwnerId=$ownerId ReminderDateTime='$taskDateTime'" -o "$username" --json --loglevel debug
             # $result
         }
         
