@@ -29,6 +29,18 @@ catch {
     Write-Host "====================================================" -ForegroundColor White
 }
 
+Function PostSyncRoutine {
+    Write-Host "Checking and Updating SalesForce CLI to ensure maximum compatibilty..." -ForegroundColor Cyan
+    sf update > $null
+    Write-Host " " 
+    Write-Host "Checking and Updating Sharepoint Integration Module to ensure maximum compatibilty..." -ForegroundColor Cyan
+    Update-Module -Name PnP.PowerShell
+    Write-Host "Done with updates..." -ForegroundColor Cyan
+
+    Read-Host -Prompt "Press Enter to Synchronize Sharepoint SP Tasks to SFDC next, or CTRL+C to exit..." -ForegroundColor White
+    & "$PSScriptRoot\sfdc_sync_tasks.ps1"
+    Exit
+}
 
 Function Save-UserName {
     $username = $(Write-Host "Please enter your email address as it appears in your SFDC Profile:" -ForegroundColor Yellow -BackgroundColor DarkGreen -NoNewLine; Read-Host)
@@ -38,7 +50,7 @@ Function Save-UserName {
 
 #Check whether the PnP.Powershell module is installed, and install it if not
 Write-Host "Checking Sharepoint [PnP.PowerShell] module..."
-if (!(Get-Module -ListAvailable -Name "PnP.Powershell")){
+if (!(Get-Module -ListAvailable -Name "PnP.Powershell")) {
     Write-Host "Installing Sharepoint Powershell module..."
     Install-Module -Name "PnP.PowerShell"
     Write-Host "Sharepoint Powershell module installed..."
@@ -49,11 +61,12 @@ Write-Host "Checking user configuration..."
 $username = ''
 if (Test-Path "$PSScriptRoot\user.cfg") {
     $username = Get-Content "$PSScriptRoot\user.cfg"
-} else {
+}
+else {
     $username = Save-UserName
 }
 # Validate length of User Name, and re-prompt if invalid
-if ($username.Length -lt 8){
+if ($username.Length -lt 8) {
     $username = Save-UserName
 }
 
@@ -116,17 +129,15 @@ Write-Host "Fetching Sharepoint Tracker Opportunities..." -ForegroundColor White
 $ListItems = Get-PnPListItem -List $ListName -Query $camlQuery -Connection $SPConnection
 
 if ($ListItems -eq $null) {
-    Write-Host "=================================================================" -ForegroundColor Red
-    Write-Host "- ERROR: No Sharepoint Tracker Opps found matching your criteria." -ForegroundColor Red
-    Write-Host "=================================================================" -ForegroundColor Red
-    Write-Host "Press Enter to exit..." -ForegroundColor White
-    Read-Host
-    Exit
+    Write-Host "======================================================================" -ForegroundColor Yellow
+    Write-Host "  - No Sharepoint Tracker Opportunities found matching your criteria." -ForegroundColor Yellow
+    Write-Host "======================================================================" -ForegroundColor Yellow
+    PostSyncRoutine
 }
 
 Write-Host "Retrieved " -NoNewline
 Write-Host "$($ListItems.Count)" -ForegroundColor Green -NoNewline
-Write-Host " Sharepoint Tracker Oppoprtunites..." -ForegroundColor White
+Write-Host " Sharepoint Tracker Opportunites..." -ForegroundColor White
 Write-Host " "
 
 $itemsUpdated = 0
@@ -314,8 +325,7 @@ Write-Host " "
 Write-Host "==> Process completed on $(Get-Date)" -ForegroundColor White
 Write-Host " "
 Write-Host "================================================- DONE -================================================" -ForegroundColor Green
-Write-Host "*** Note: if you see warnings about SF being out-of-date, open an Administrator Powershell window, and type 'sfdx update'" -ForegroundColor White
 Write-Host " "
-Read-Host -Prompt "Press Enter to Synchronize Sharepoint SP Tasks to SFDC next, or CTRL+C to exit..."
-& "$PSScriptRoot\sfdc_sync_tasks.ps1"
+
+PostSyncRoutine
 # exit
