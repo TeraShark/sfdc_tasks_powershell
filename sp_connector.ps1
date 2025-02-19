@@ -1,9 +1,3 @@
-Write-Host "Setting SFDX CLI variables..."
-Set-Item -Path Env:SF_AUTOUPDATE_DISABLE -Value $false
-Set-Item -Path Env:SFDX_HIDE_RELEASE_NOTES -Value $true
-Set-Item -Path Env:SFDX_HIDE_RELEASE_NOTES_FOOTER -Value $true
-Write-Host "Settings applied..."
-
 
 $SiteUrl = "https://dell.sharepoint.com/sites/DevOpsCloud-NativeSPEAR"
 $ListName = "Presales Tracker"
@@ -14,30 +8,49 @@ $default_bgcolor = (get-host).UI.RawUI.BackgroundColor
 
 $SPConnection = $null
 
+
+#Check whether the PnP.Powershell module is installed, and install it if not
+Write-Host "Checking Sharepoint [PnP.PowerShell] module..."
+if (!(Get-Module -ListAvailable -Name "PnP.PowerShell")) {
+    Write-Host "Installing Sharepoint Powershell module..."
+    Install-Module -Name "PnP.PowerShell"
+    Write-Host "Sharepoint Powershell module installed..."
+}
+
 Write-Host "========== Testing Sharepoint connection ===========" -ForegroundColor White
 try {
     # First try to get list item from cached connection
-    $SPConnection = Get-PnPConnection | Out-Null
-    Write-Host "=> Connection successful..." -ForegroundColor Green
-    Write-Host "====================================================" -ForegroundColor White
+    $SPConnection = Get-PnPConnection
+    if ($null -eq $SPConnection) {
+        Write-Host "Reconnecting to Sharepoint..." -ForegroundColor Yellow
+        #Connect to PnP Online if above fails
+        $SPConnection = Connect-PnPOnline -Url $SiteURL -UseWebLogin -ReturnConnection
+        Write-Host "=> Connection successful..." -ForegroundColor Green
+        Write-Host "====================================================" -ForegroundColor White
+    }
+    else {
+        Write-Host "=> Connection successful..." -ForegroundColor Green
+        Write-Host "====================================================" -ForegroundColor White
+    }
 }
 catch {
     Write-Host "Reconnecting to Sharepoint..." -ForegroundColor Yellow
     #Connect to PnP Online if above fails
-    $SPConnection = Connect-PnPOnline -Url $SiteURL -UseWebLogin | Out-Null
+    $SPConnection = Connect-PnPOnline -Url $SiteURL -UseWebLogin -ReturnConnection
     Write-Host "=> Connection successful..." -ForegroundColor Green
     Write-Host "====================================================" -ForegroundColor White
 }
 
 Function PostSyncRoutine {
-    Write-Host "Checking and Updating SalesForce CLI to ensure maximum compatibilty..." -ForegroundColor Cyan
+    Write-Host "=> Checking and Updating SalesForce CLI to ensure maximum compatibilty..." -ForegroundColor Cyan
     sf update > $null
+    Write-Host "=> Checking and Updating Sharepoint Module to ensure maximum compatibilty..." -ForegroundColor Cyan
+    Update-Module -Name "PnP.PowerShell"
     Write-Host " " 
-    Write-Host "Checking and Updating Sharepoint Integration Module to ensure maximum compatibilty..." -ForegroundColor Cyan
-    Update-Module -Name PnP.PowerShell
-    Write-Host "Done with updates..." -ForegroundColor Cyan
-
-    Read-Host -Prompt "Press Enter to Synchronize Sharepoint SP Tasks to SFDC next, or CTRL+C to exit..." -ForegroundColor White
+    Write-Host "=> Done with updates..." -ForegroundColor Cyan
+    Write-Host " " 
+    Write-Host "Press Enter to Synchronize Sharepoint SP Tasks to SFDC next, or CTRL+C to exit..." -ForegroundColor White
+    Read-Host
     & "$PSScriptRoot\sfdc_sync_tasks.ps1"
     Exit
 }
@@ -46,14 +59,6 @@ Function Save-UserName {
     $username = $(Write-Host "Please enter your email address as it appears in your SFDC Profile:" -ForegroundColor Yellow -BackgroundColor DarkGreen -NoNewLine; Read-Host)
     Set-Content "$PSScriptRoot\user.cfg" -Value $username
     return $username
-}
-
-#Check whether the PnP.Powershell module is installed, and install it if not
-Write-Host "Checking Sharepoint [PnP.PowerShell] module..."
-if (!(Get-Module -ListAvailable -Name "PnP.Powershell")) {
-    Write-Host "Installing Sharepoint Powershell module..."
-    Install-Module -Name "PnP.PowerShell"
-    Write-Host "Sharepoint Powershell module installed..."
 }
 
 # Check for username stored in config file, and if non-existent, prompt and create file
