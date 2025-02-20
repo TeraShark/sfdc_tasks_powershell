@@ -2,33 +2,59 @@
 ## What is this?
 A Powerful set of scripts which you can execute whenever you need to create a Task for an Opportunity, List your existing tasks, open them in the browser, sync sharepoint lists from SFDC, etc.
 
-As opposed to navigating through the SFDC Web UI, these scripts allow you to simply enter the numbered options from the script prompts, and you're done. As opposed to spending valuable time navigating through the slow and painful SFDC Web UI, waiting for sections and pages to load, clickety-click-clicking and selecting from a plethora of options, this script gets you through the process quickly and easily :-)
+As opposed to spending valuable time navigating through the slow and painful SFDC Web UI, waiting for sections and pages to load, clickety-click-clicking and selecting from a plethora of options, this script gets you through the process quickly and easily :-)
+
+## Dependencies
+The scripts in this repo have the following dependencies:
+1. PowerShell 7.x
+    - With Unrestricted or RemoteSigned execution policy
+2. PnP.PowerShell
+    - This is Sharepoint module for PowerShell 7.x
+    - The `sp_connector.ps1` script will automatically attempt to install the PnP.Powershell module dynamically if not present when executed
+3. SFDC CLI (MSI package)
 
 ## Script files ##
 
 | Script                      | Function                                                      |
 |-----------------------------|---------------------------------------------------------------|
-|`sfdc_create_task.ps1`       |Creates tasks in SFDC, prompting for input through the process |
-|`sfdc_sync_tasks.ps1`        |Synchronizes tasks created in Sharepoint to SFDC directly |
+|`sfdc_create_task.ps1`       |Provides dynamic Task creation in SFDC, prompting for input through the process |
 |`sp_connector.ps1`           |Reads a Sharepoint list, and updates each list item synchronously from SFDC |  
+|`sfdc_sync_tasks.ps1`        |Synchronizes tasks created in Sharepoint to SFDC directly. The script `sp_connector.ps1` also provides an option to execute this script automatically after syncing Deals |
+
+## Config files ##
+
+When you first execute `sp_connector.ps1`, you will be prompted for your Sharepoint username, and your SFDC username. These values will be stored (without passwords) in config files named `sharepoint.cfg` and `user.cfg`, respectively.
+There should be no need to modify these auto-generated config files, unless you accidentally mistyped the values when prompted on first run, and are facing authentication issues.
+
+## Passwords / Authentication ##
+**No passwords** are stored in the files in this repo, nor in the config files generated on first execution of scripts. Authentication against SFDC is provided natively by the SFDC CLI, stored as tokens in the CLI subsystem. The scripts in this repo do not ever access such data directly - the official SFDC CLI handles that seamlessly after first login.
+For Sharepoint authentication, in-context Windows credentials are leveraged, based on the user executing the scripts.
+You will not be prompted for passwords directly in the scripts (only you User ID(s) / User Names(s) for the relevant integrations). By no means, should you ever be storing passwords anywhere in scripts or config files, since this is not only stupid, but will likely be in violation of any company policy. 
+You have been warned.
 
 ## Installation
+
 ### Prerequisites
-1. You'll need local administrator rights. This is provided through "BeyondTrust Privilege Management". 
-    - If you get a prompt requesting credentials when you select "Run as Administrator", you'll need to submit a request to elevate your "BeyondTrust" permissions through IT. 
-2. You will also need the following installed and configured in order to run the SFDC-related scripts in this repo:
-    - PowerShell 7.x ([download here, from the official github repo](https://github.com/PowerShell/powershell/releases))
-    - SFDC CLI ([download here, from Salesforce](https://developer.salesforce.com/tools/salesforcecli))
+1. You will, most likely, need local administrator rights to install the required packages and to set the Execution Policy for PowerShell. I'm working on a way to get around this, but it's going to take me some time to figure it out.
+2. You will need the following dependencies installed and configured in order to run the scripts in this repo:
+    - **Git** for Windows 
+        - Install through "*Company Portal*" by searching for "*Git*"
+        - You don't necessarily need Git if you choose to download the files from this repo directly, however, if you want the ability to receive updates / refinements to the scripts as I continue to maintain them, I'd suggest you install Git and use it to retrieve the scripts in this repo using '`git clone ...`', and get updates in future, by using '`git pull`'
+    - **PowerShell 7.x**
+        - Install through "*Company Portal*" by searching for "*Powershell 7*"
+   - **SFDC CLI** 
+        - [Download here, from Salesforce.com](https://developer.salesforce.com/tools/salesforcecli)
+        - This may be a challenge, given possible corporate policies, where executables beyond those available in Device Management Systems (e.g. InTune, Company Portal) may be blocked.
 
 ### Setup and configuration
-1. In the 'sfdc_create_task.ps1' script (if you plan on using this script), customize the list of task types (`$taskTypes`) in the task script to match your most commonly used types, ensuring that they match **exactly** what is listed in your SFDC UI instance.
-2. Open a Powershell 7 terminal **as an Administrator**, and execute this command:  
+1. Open a Powershell 7 terminal **as an Administrator**, and execute this command:  
 `Set-ExecutionPolicy Unrestricted`
-3. Open a new, regular (**non-admin**) Powershell 7 terminal, and execute this command:  
+2. Open a new, regular (**non-admin**) Powershell 7 terminal, and execute this command:  
 `sfdx force:auth:web:login -a dell`
     - This will open a web browser window and prompt you for permission to access the SFDC API, using your SSO credentials - this creates a token for subsequent calls to SFDC. 
     - Follow the sign-in prompts, and once you've signed in successfully, close the browser tab. In the Powershell terminal, you should see a message indicating that your token has been stored - this means you're good to go :-)
     - *No SSO sign-in?* If you see a regular, non-Dell Salesforce sign-in page, there should be a link towrds the bottom of that page for a custom domain. Click the link, and enter `dell` when the prompt comes up, then follow the sign-in process as denoted above.
+3. If you plan on using the standalone script 'sfdc_create_task.ps1' to create SFDC tasks, customize the list of task types (`$taskTypes`) in the task script to match your most commonly used types, ensuring that they match **exactly** what is listed in your SFDC UI instance.
 4. (***Optional | recommended***) Create a Desktop or Taskbar shortcut to the script and customize the icon for ease of access.
     * To create a shortcut, simply right-click an open space on your Desktop, select "New -> Shortcut".
     * For the path, you will need to specify the path to Powershell, followed by the path to the relevant `sfdc_script.ps1` script. 

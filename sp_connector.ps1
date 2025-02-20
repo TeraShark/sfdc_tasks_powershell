@@ -133,7 +133,7 @@ Write-Host " "
 Write-Host "Fetching Sharepoint Tracker Opportunities..." -ForegroundColor White
 $ListItems = Get-PnPListItem -List $ListName -Query $camlQuery -Connection $SPConnection
 
-if ($ListItems -eq $null) {
+if ($null -eq $ListItems) {
     Write-Host "======================================================================" -ForegroundColor Yellow
     Write-Host "  - No Sharepoint Tracker Opportunities found matching your criteria." -ForegroundColor Yellow
     Write-Host "======================================================================" -ForegroundColor Yellow
