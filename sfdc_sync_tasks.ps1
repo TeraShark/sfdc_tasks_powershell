@@ -11,9 +11,6 @@ $ListName = "SP Tasks"
 #InternalName of the selected fields
 $SelectedFields = @("ID", "Title", "Description", "SFDC_x0020_ID", "Task_x0020_Type", "WS_x0020_Focus", "Task_x0020_Date", "Sync_x0020_Status", "Author", "SFDC_Internal_ID")
 
-$default_bgcolor = (get-host).UI.RawUI.BackgroundColor
-
-
 Function Save-UserName {
     $username = $(Write-Host "Please enter your email address as it appears in your SFDC Profile:" -ForegroundColor Yellow -BackgroundColor DarkGreen -NoNewLine; Read-Host)
     Set-Content "$PSScriptRoot\user.cfg" -Value $username
