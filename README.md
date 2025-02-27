@@ -9,21 +9,21 @@ The scripts in this repo have the following dependencies:
 1. PowerShell 7.x
     - With Unrestricted or RemoteSigned execution policy
 2. PnP.PowerShell
-    - This is Sharepoint module for PowerShell 7.x
-    - The `sp_connector.ps1` script will automatically attempt to install the PnP.Powershell module dynamically if not present when executed
-3. SFDC CLI (MSI package)
+    - Sharepoint module for PowerShell 7.x
+    - The `sp_connector.ps1` script will automatically attempt to install this module dynamically, if not present
+3. SFDC CLI (MSI package) from SalesForce.com
 
 ## Script files ##
 
 | Script                      | Function                                                      |
 |-----------------------------|---------------------------------------------------------------|
-|`sfdc_create_task.ps1`       |Provides dynamic Task creation in SFDC, prompting for input through the process |
-|`sp_connector.ps1`           |Reads a Sharepoint list, and updates each list item synchronously from SFDC |  
-|`sfdc_sync_tasks.ps1`        |Synchronizes tasks created in Sharepoint to SFDC directly. The script `sp_connector.ps1` also provides an option to execute this script automatically after syncing Deals |
+|`sfdc_create_task.ps1`       |To quickly and easily create individual Tasks against Opportunities in SFDC. Prompts for input through the process |
+|`sp_connector.ps1`           |Reads the Sharepoint Opp Tracker list, and updates those items from SFDC |  
+|`sfdc_sync_tasks.ps1`        |Synchronizes tasks created in the Sharepoint Tracker to SFDC directly. The script `sp_connector.ps1` also provides an option to execute this script automatically after syncing Deals |
 
 ## Config files ##
 
-When you first execute `sp_connector.ps1`, you will be prompted for your Sharepoint username, and your SFDC username. These values will be stored (without passwords) in config files named `sharepoint.cfg` and `user.cfg`, respectively.
+When you first execute `sp_connector.ps1`, you will be prompted for your Sharepoint username (usually 'Last Name, First Name'), and your SFDC username (usually your Dell email address, e.g. 'j_soap@dell.com'). These values will be stored (without passwords) in config files named `sharepoint.cfg` and `user.cfg`, respectively.
 There should be no need to modify these auto-generated config files, unless you accidentally mistyped the values when prompted on first run, and are facing authentication issues.
 
 ## Passwords / Authentication ##
@@ -49,11 +49,11 @@ You have been warned.
 ### Setup and configuration
 1. Open a Powershell 7 terminal **as an Administrator**, and execute this command:  
 `Set-ExecutionPolicy Unrestricted`
-2. Open a new, regular (**non-admin**) Powershell 7 terminal, and execute this command:  
+2. Close the Admin terminal. Open a new, regular (**non-admin**) Powershell 7 terminal, and execute this command:  
 `sfdx force:auth:web:login -a dell`
     - This will open a web browser window and prompt you for permission to access the SFDC API, using your SSO credentials - this creates a token for subsequent calls to SFDC. 
-    - Follow the sign-in prompts, and once you've signed in successfully, close the browser tab. In the Powershell terminal, you should see a message indicating that your token has been stored - this means you're good to go :-)
-    - *No SSO sign-in?* If you see a regular, non-Dell Salesforce sign-in page, there should be a link towrds the bottom of that page for a custom domain. Click the link, and enter `dell` when the prompt comes up, then follow the sign-in process as denoted above.
+    - Follow the sign-in prompts (you may need to sign in with SSO using the link at the bottom of the page), and once you've signed in successfully, close the browser tab. In the Powershell terminal, you should see a message indicating that your token has been stored - this means you're good to go :-)
+    - *No SSO sign-in?* If you see a regular, non-Dell Salesforce sign-in page prompting for a username and password, look for a link towards the bottom of the login page containing "custom domain". Click the link, and enter `dell` for the domain when the prompt comes up, then follow the sign-in process as denoted above.
 3. If you plan on using the standalone script 'sfdc_create_task.ps1' to create SFDC tasks, customize the list of task types (`$taskTypes`) in the task script to match your most commonly used types, ensuring that they match **exactly** what is listed in your SFDC UI instance.
 4. (***Optional | recommended***) Create a Desktop or Taskbar shortcut to the script and customize the icon for ease of access.
     * To create a shortcut, simply right-click an open space on your Desktop, select "New -> Shortcut".
