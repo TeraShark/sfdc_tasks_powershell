@@ -15,7 +15,16 @@ if (!(Get-Module -ListAvailable -Name "PnP.PowerShell")) {
     Write-Host "Installing Sharepoint Powershell module..."
     Install-Module -Name "PnP.PowerShell"
     Write-Host "Sharepoint Powershell module installed..."
+} else {
+    Write-Host "=> Checking and Updating Sharepoint Module to ensure maximum compatibilty..." -ForegroundColor Cyan
+    Update-Module -Name "PnP.PowerShell" -AcceptLicense -Force
 }
+
+Write-Host "=> Checking and Updating SalesForce CLI to ensure maximum compatibilty..." -ForegroundColor Cyan
+sf update > $null
+Write-Host " " 
+Write-Host "=> Done with updates..." -ForegroundColor Cyan
+Write-Host " " 
 
 Write-Host "========== Testing Sharepoint connection ===========" -ForegroundColor White
 try {
@@ -41,14 +50,8 @@ catch {
     Write-Host "====================================================" -ForegroundColor White
 }
 
+
 Function PostSyncRoutine {
-    Write-Host "=> Checking and Updating SalesForce CLI to ensure maximum compatibilty..." -ForegroundColor Cyan
-    sf update > $null
-    Write-Host "=> Checking and Updating Sharepoint Module to ensure maximum compatibilty..." -ForegroundColor Cyan
-    Update-Module -Name "PnP.PowerShell"
-    Write-Host " " 
-    Write-Host "=> Done with updates..." -ForegroundColor Cyan
-    Write-Host " " 
     Write-Host "Press Enter to Synchronize Sharepoint SP Tasks to SFDC next, or CTRL+C to exit..." -ForegroundColor White
     Read-Host
     & "$PSScriptRoot\sfdc_sync_tasks.ps1"
@@ -75,7 +78,7 @@ if ($username.Length -lt 8) {
     $username = Save-UserName
 }
 
-Write-Host "=> Validation successful. Loading menu..." -ForegroundColor Green
+Write-Host "=> Prechecks successful. Loading menu..." -ForegroundColor Green
 Write-Host "====================================================" -ForegroundColor White
 
 Start-Sleep -Seconds 1
