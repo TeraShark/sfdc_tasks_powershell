@@ -8,7 +8,6 @@ $default_bgcolor = (get-host).UI.RawUI.BackgroundColor
 
 $SPConnection = $null
 
-
 #Check whether the PnP.Powershell module is installed, and install it if not
 Write-Host "Checking Sharepoint [PnP.PowerShell] module..."
 if (!(Get-Module -ListAvailable -Name "PnP.PowerShell")) {
@@ -19,6 +18,9 @@ if (!(Get-Module -ListAvailable -Name "PnP.PowerShell")) {
     Write-Host "=> Checking and Updating Sharepoint Module to ensure maximum compatibilty..." -ForegroundColor Cyan
     Update-Module -Name "PnP.PowerShell" -AcceptLicense -Force
 }
+
+# Disable update checks on PnP.PowerShell module (since we're updating every time we run)
+[System.Environment]::SetEnvironmentVariable('PNPPOWERSHELL_UPDATECHECK', 'Off')
 
 Write-Host "=> Checking and Updating SalesForce CLI to ensure maximum compatibilty..." -ForegroundColor Cyan
 sf update > $null
@@ -80,7 +82,7 @@ if ($username.Length -lt 8) {
 
 Write-Host "=> Prechecks successful. Loading menu..." -ForegroundColor Green
 Write-Host "====================================================" -ForegroundColor White
-
+Read-Host
 Start-Sleep -Seconds 1
 Clear-Host
 Write-Host " "
