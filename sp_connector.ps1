@@ -82,8 +82,7 @@ if ($username.Length -lt 8) {
 
 Write-Host "=> Prechecks successful. Loading menu..." -ForegroundColor Green
 Write-Host "====================================================" -ForegroundColor White
-Read-Host
-Start-Sleep -Seconds 1
+Start-Sleep -Seconds 2
 Clear-Host
 Write-Host " "
 
