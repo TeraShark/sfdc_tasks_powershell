@@ -12,11 +12,11 @@ $SPConnection = $null
 Write-Host "Checking Sharepoint [PnP.PowerShell] module..."
 if (!(Get-Module -ListAvailable -Name "PnP.PowerShell")) {
     Write-Host "Installing Sharepoint Powershell module..."
-    Install-Module -Name "PnP.PowerShell"
+    Install-Module -Name "PnP.PowerShell" -AcceptLicense
     Write-Host "Sharepoint Powershell module installed..."
 } else {
     Write-Host "=> Checking and Updating Sharepoint Module to ensure maximum compatibilty..." -ForegroundColor Cyan
-    Update-Module -Name "PnP.PowerShell" -AcceptLicense -Force
+    Update-Module -Name "PnP.PowerShell" -AcceptLicense
 }
 
 # Disable update checks on PnP.PowerShell module (since we're updating every time we run)
