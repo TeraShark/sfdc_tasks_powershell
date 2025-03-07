@@ -14,7 +14,8 @@ if (!(Get-Module -ListAvailable -Name "PnP.PowerShell")) {
     Write-Host "Installing Sharepoint Powershell module..."
     Install-Module -Name "PnP.PowerShell" -AcceptLicense
     Write-Host "Sharepoint Powershell module installed..."
-} else {
+}
+else {
     Write-Host "=> Checking and Updating Sharepoint Module to ensure maximum compatibilty..." -ForegroundColor Cyan
     Update-Module -Name "PnP.PowerShell" -AcceptLicense
 }
@@ -86,6 +87,7 @@ Start-Sleep -Seconds 2
 Clear-Host
 Write-Host " "
 
+$showSummary = $true
 Write-Host "Which Sharepoint Tracker Opportunities do you want to sync?" -NoNewLine -ForegroundColor Yellow -BackgroundColor DarkGreen
 Write-Host " " -BackgroundColor $default_bgcolor
 Write-Host "1. All Active Sharepoint Opps" -ForegroundColor White
@@ -101,6 +103,7 @@ switch ("$next") {
     2 {
         # Today's items
         $camlQuery = "<View><Query><Where><And><Eq><FieldRef Name='Created' /><Value Type='DateTime'><Today /></Value></Eq><And><Neq><FieldRef Name='Status'/><Value Type='Choice'>Cancelled</Value></Neq><And><Neq><FieldRef Name='Status'/><Value Type='Choice'>Lost</Value></Neq><And><IsNotNull><FieldRef Name='SFDC_x0020_ID'/></IsNotNull><And><Neq><FieldRef Name='Status'/><Value Type='Choice'>Complete</Value></Neq><Neq><FieldRef Name='Status'/><Value Type='Choice'>Cancelled / Archived</Value></Neq></And></And></And></And></And></Where></Query><ViewFields><FieldRef Name='ID' /><FieldRef Name='Title' /><FieldRef Name='Description' /><FieldRef Name='SFDC_x0020_ID' /><FieldRef Name='TCV_x0020__x0024_' /><FieldRef Name='Est_x002e__x0020_Close' /><FieldRef Name='SFDCLink' /><FieldRef Name='PrimaryContact' /></ViewFields></View>"
+        $showSummary = $false
         Break
     }
     3 {
@@ -124,6 +127,7 @@ switch ("$next") {
         }
         Write-Host " " -BackgroundColor $default_bgcolor
         $camlQuery = "<View><Query><Where><Eq><FieldRef Name='SFDC_x0020_ID' /><Value Type='Text'>$dealId</Value></Eq></Where></Query><ViewFields><FieldRef Name='ID' /><FieldRef Name='Title' /><FieldRef Name='Description' /><FieldRef Name='SFDC_x0020_ID' /><FieldRef Name='TCV_x0020__x0024_' /><FieldRef Name='Est_x002e__x0020_Close' /><FieldRef Name='SFDCLink' /><FieldRef Name='PrimaryContact' /></ViewFields></View>"
+        $showSummary = $false
         Break
     }
 }
@@ -149,12 +153,18 @@ Write-Host "$($ListItems.Count)" -ForegroundColor Green -NoNewline
 Write-Host " Sharepoint Tracker Opportunites..." -ForegroundColor White
 Write-Host " "
 
+#region Variable declarations
+
 $itemsUpdated = 0
 $lostItems = @()
 $wonItems = @()
 $invalidItems = @()
 $skippedItems = @()
-$validMEDDPICCount = 0
+$sixties = @()
+$nineties = @()
+
+#endregion
+
 
 $ListItems | ForEach-Object {
     $ListItem = Get-PnPProperty -Connection $SPConnection -ClientObject $_ -Property FieldValuesAsText
@@ -212,6 +222,7 @@ $ListItems | ForEach-Object {
             Write-Host "                                                          |" -ForegroundColor White
         }
         else {
+          
             $oppName = $opp.result.records.Name
             $oppId = $opp.result.records.ID
             $amount = '{0:C}' -f $opp.result.records.Amount
@@ -226,11 +237,11 @@ $ListItems | ForEach-Object {
             $stage = $opp.result.records.StageName
             $prob = $opp.result.records.Probability
             $notes = ""
-            
-            Write-Host "==> Opportunity [$dealId] ($oppName) found..." -ForegroundColor Cyan
-
             $accName = $opp.result.records.Account.Name
+
+            Write-Host "==> Opportunity [$dealId] ($oppName) found..." -ForegroundColor Cyan
             Write-Host "==> Account: $accName" -ForegroundColor Cyan
+
             $($opp.result.records.Total_Contract_Value_TCV__c)
             if ($servicesAmount) {
                 Write-Host "==> TCV: $amount | Services: $servicesAmount | Stage: $stage" -ForegroundColor White
@@ -279,7 +290,6 @@ $ListItems | ForEach-Object {
                 ![string]::IsNullOrEmpty($opp.result.records.Metrics__c) -and 
                 ![string]::IsNullOrEmpty($opp.result.records.Identify_Value_Drivers__c)) {
                 $updates += @{"MEDDPIC" = "Compliant" }
-                $validMEDDPICCount++
             }
             #Opportunity Lost:
             if ($stage.StartsWith("Lost")) {
@@ -295,6 +305,13 @@ $ListItems | ForEach-Object {
             else {
                 $updates += @{"Booked" = "0" }
             }
+            # 60/90 opps:
+            if ($prob -eq 60) {
+                $sixties += "$cust ($oppDesc)`n     [$dealId] | TCV: $amount | $estCloseDate"
+            }
+            elseif ($prob -eq 90) {
+                $nineties += "$cust ($oppDesc)`n     [$dealId] | TCV: $amount | $estCloseDate"
+            }
 
             Set-PnPListItem -List $ListName -Identity $ListRow.ID -Values $updates -Connection $SPConnection > $null
             Write-Host "==> Sharepoint Item for Opp [$dealId] updated..." -ForegroundColor Green
@@ -306,31 +323,46 @@ $ListItems | ForEach-Object {
     }
 }
 Write-Host "                                                         ~~~" -ForegroundColor White
-Write-Host "=========================================== Begin SUMMARY ============================================================" -ForegroundColor Gray
-Write-Host "==> Sharepoint List Items processed: $($ListItems.Count), List Items updated: $itemsUpdated" -ForegroundColor Gray
-Write-Host "--------------------------- Won Opportunities ($($wonItems.count)) -----------------------------" -ForegroundColor Green
-foreach ( $item in $wonItems) {
-    Write-Host "  - $item" -ForegroundColor Green
+#region Summary
+if ($showSummary -eq $true) {
+    Write-Host "=============================================  SUMMARY  ==============================================================" -ForegroundColor Gray
+    Write-Host "==> Sharepoint List Items processed: $($ListItems.Count), List Items updated: $itemsUpdated" -ForegroundColor Gray
+    Write-Host "--------------------------- Won Opportunities ($($wonItems.count)) -----------------------------" -ForegroundColor Green
+    foreach ( $item in $wonItems) {
+        Write-Host "  - $item" -ForegroundColor Green
+    }
+    Write-Host "-------------------------------------------------------------------------------" -ForegroundColor Green
+    Write-Host "--------------------------- Lost Opportunities ($($lostItems.count)) ----------------------------" -ForegroundColor Red
+    foreach ( $item in $lostItems) {
+        Write-Host "  - $item" -ForegroundColor Red
+    }
+    Write-Host "-------------------------------------------------------------------------------" -ForegroundColor Red
+    Write-Host "--------------------------- Skipped Items [DFN] ($($skippedItems.count)) ---------------------------" -ForegroundColor Gray
+    foreach ( $item in $skippedItems) {
+        Write-Host "  - $item" -ForegroundColor Gray
+    }
+    Write-Host "-------------------------------------------------------------------------------" -ForegroundColor Gray
+    Write-Host "--------------------------- Opps Not Found ($($invalidItems.count)) --------------------------------" -ForegroundColor Yellow
+    foreach ( $item in $invalidItems) {
+        Write-Host "  - $item" -ForegroundColor Yellow
+    }
+    Write-Host "-------------------------------------------------------------------------------" -ForegroundColor Yellow
+    Write-Host "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -" -ForegroundColor Gray
+    Write-Host "----------------------------------- Opps @ Propose - 60% ($($sixties.count)) -------------------------------------------" -ForegroundColor Green
+    foreach ( $item in $sixties) {
+        Write-Host "  ->" -ForegroundColor Green -NoNewline
+        Write-Host " $item" -ForegroundColor Gray
+    }
+    Write-Host "--------------------------------------------------------------------------------------------------------" -ForegroundColor Green
+    Write-Host "----------------------------------- Opps @ Commit - 90% ($($nineties.count)) --------------------------------------------" -ForegroundColor Green
+    foreach ( $item in $nineties) {
+        Write-Host "  ->" -ForegroundColor Green -NoNewline
+        Write-Host " $item" -ForegroundColor Gray
+    }
+    Write-Host "--------------------------------------------------------------------------------------------------------" -ForegroundColor Green
+    Write-Host " "
 }
-Write-Host "-------------------------------------------------------------------------------" -ForegroundColor Green
-Write-Host "--------------------------- Lost Opportunities ($($lostItems.count)) ----------------------------" -ForegroundColor Red
-foreach ( $item in $lostItems) {
-    Write-Host "  - $item" -ForegroundColor Red
-}
-Write-Host "-------------------------------------------------------------------------------" -ForegroundColor Red
-Write-Host "--------------------------- Skipped Items [DFN] ($($skippedItems.count)) ---------------------------" -ForegroundColor Gray
-foreach ( $item in $skippedItems) {
-    Write-Host "  - $item" -ForegroundColor Gray
-}
-Write-Host "-------------------------------------------------------------------------------" -ForegroundColor Gray
-Write-Host "--------------------------- Opps Not Found ($($invalidItems.count)) --------------------------------" -ForegroundColor Yellow
-foreach ( $item in $invalidItems) {
-    Write-Host "  - $item" -ForegroundColor Yellow
-}
-Write-Host "-------------------------------------------------------------------------------" -ForegroundColor Yellow
-#Write-Host "==> Valid MEDDPIC: $validMEDDPICCount" -ForegroundColor White
-#Write-Host "==> Invalid MEDDPIC: $($itemsUpdated - $validMEDDPICCount)" -ForegroundColor Yellow
-Write-Host " "
+#endregion
 Write-Host "==> Process completed on $(Get-Date)" -ForegroundColor White
 Write-Host " "
 Write-Host "================================================- DONE -================================================" -ForegroundColor Green
