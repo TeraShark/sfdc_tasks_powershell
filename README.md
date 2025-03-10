@@ -23,8 +23,8 @@ The scripts in this repo have the following dependencies:
 
 ## Config files ##
 
-When you first execute `sp_connector.ps1`, you will be prompted for your Sharepoint username (usually 'Last Name, First Name'), and your SFDC username (usually your Dell email address, e.g. 'j_soap@dell.com'). These values will be stored (without passwords) in config files named `sharepoint.cfg` and `user.cfg`, respectively.
-There should be no need to modify these auto-generated config files, unless you accidentally mistyped the values when prompted on first run, and are facing authentication issues.
+When you first execute `sp_connector.ps1`, you will be prompted for your Sharepoint username (usually 'Last Name, First Name'), and your SFDC username (usually your Dell email address, e.g. 'j_soap@dell.com'). These values will be stored (without passwords) in config files named `sharepoint.cfg` and `user.cfg`, respectively. These config files are auto-generated if they don't exist.
+There should be no need to modify these auto-generated config files, unless you accidentally mistyped the values when prompted on first run, possibly causing authentication issues.
 
 ## Passwords / Authentication ##
 **No passwords** are stored in the files in this repo, nor in the config files generated on first execution of scripts. Authentication against SFDC is provided natively by the SFDC CLI, stored as tokens in the CLI subsystem. The scripts in this repo do not ever access such data directly - the official SFDC CLI handles that seamlessly after first login.
@@ -35,7 +35,7 @@ You have been warned.
 ## Installation
 
 ### Prerequisites
-1. You will, most likely, need local administrator rights to install the required packages and to set the Execution Policy for PowerShell. I'm working on a way to get around this, but it's going to take me some time to figure it out.
+1. You will, most likely, need local administrator rights to install the required packages and to set the Execution Policy for PowerShell.
 2. You will need the following dependencies installed and configured in order to run the scripts in this repo:
     - **Git** for Windows 
         - Install through "*Company Portal*" by searching for "*Git*"
@@ -44,7 +44,13 @@ You have been warned.
         - Install through "*Company Portal*" by searching for "*Powershell 7*"
    - **SFDC CLI** 
         - [Download here, from Salesforce.com](https://developer.salesforce.com/tools/salesforcecli)
-        - This may be a challenge, given possible corporate policies, where executables beyond those available in Device Management Systems (e.g. InTune, Company Portal) may be blocked.
+        - Run the installer and follow the prompts
+        - *Trouble* running the installer? *Workaround*:
+            - Install the latest version of **Node.js** through "*Company Portal*"
+            - Once installed, open a Terminal window, and verify the installation by typing the below, which should display the version number and not an error:<br />
+            `node --version`
+            - Now, type the following into the Terminal window to install the SalesForce CLI: <br />
+            `npm install @salesforce/cli --global`
 
 ### Setup and configuration
 1. Open a Powershell 7 terminal **as an Administrator**, and execute this command:  
@@ -53,7 +59,7 @@ You have been warned.
 `sfdx force:auth:web:login -a dell`
     - This will open a web browser window and prompt you for permission to access the SFDC API, using your SSO credentials - this creates a token for subsequent calls to SFDC. 
     - Follow the sign-in prompts (you may need to sign in with SSO using the link at the bottom of the page), and once you've signed in successfully, close the browser tab. In the Powershell terminal, you should see a message indicating that your token has been stored - this means you're good to go :-)
-    - *No SSO sign-in?* If you see a regular, non-Dell Salesforce sign-in page prompting for a username and password, look for a link towards the bottom of the login page containing "custom domain". Click the link, and enter `dell` for the domain when the prompt comes up, then follow the sign-in process as denoted above.
+    - *No SSO sign-in?* If you see a regular, non-Dell/non-SSO Salesforce sign-in page prompting for a username and password, look for a link towards the bottom of the login page containing "custom domain". Click the link, and enter `dell` for the domain when the prompt comes up. This should launch the SSO process.
 3. If you plan on using the standalone script 'sfdc_create_task.ps1' to create SFDC tasks, customize the list of task types (`$taskTypes`) in the task script to match your most commonly used types, ensuring that they match **exactly** what is listed in your SFDC UI instance.
 4. (***Optional | recommended***) Create a Desktop or Taskbar shortcut to the script and customize the icon for ease of access.
     * To create a shortcut, simply right-click an open space on your Desktop, select "New -> Shortcut".
