@@ -7,7 +7,7 @@ $SelectedFields = @("ID", "Title", "Description", "SFDC_x0020_ID", "TCV_x0020__x
 $default_bgcolor = (get-host).UI.RawUI.BackgroundColor
 
 $SPConnection = $null
-
+Write-Host "=> Beginning prechecks..." -ForegroundColor Cyan
 #Check whether the PnP.Powershell module is installed, and install it if not
 Write-Host "Checking Sharepoint [PnP.PowerShell] module..."
 if (!(Get-Module -ListAvailable -Name "PnP.PowerShell")) {
@@ -26,9 +26,6 @@ else {
 Write-Host "=> Checking and Updating SalesForce CLI to ensure maximum compatibilty..." -ForegroundColor Cyan
 sf update > $null
 Write-Host " " 
-Write-Host "=> Done with updates..." -ForegroundColor Cyan
-Write-Host " " 
-
 Write-Host "========== Testing Sharepoint connection ===========" -ForegroundColor White
 try {
     # First try to get list item from cached connection
@@ -81,9 +78,9 @@ if ($username.Length -lt 8) {
     $username = Save-UserName
 }
 
-Write-Host "=> Prechecks successful. Loading menu..." -ForegroundColor Green
+Write-Host "=> Prechecks complete. Loading menu..." -ForegroundColor Green
 Write-Host "====================================================" -ForegroundColor White
-Start-Sleep -Seconds 2
+Start-Sleep -Seconds 1
 Clear-Host
 Write-Host " "
 
