@@ -42,10 +42,10 @@ You have been warned.
         - You don't necessarily need Git if you choose to download the files from this repo directly, however, if you want the ability to receive updates / refinements to the scripts as I continue to maintain them, I'd suggest you install Git and use it to retrieve the scripts in this repo using '`git clone ...`', and get updates in future, by using '`git pull`'
     - **PowerShell 7.x**
         - Install through "*Company Portal*" by searching for "*Powershell 7*"
-   - **SFDC CLI** 
-        - [Download here, from Salesforce.com](https://developer.salesforce.com/tools/salesforcecli)
+    - **SFDC CLI** 
+        - [Download installer here, from Salesforce.com](https://developer.salesforce.com/tools/salesforcecli)
         - Run the installer and follow the prompts
-        - *Trouble* running the installer? *Workaround*:
+        - *Installer failing due to lack of admin privileges?*:
             - Install the latest version of **Node.js** through "*Company Portal*"
             - Once installed, open a Terminal window, and verify the installation by typing the below, which should display the version number and not an error:<br />
             `node --version`
@@ -60,13 +60,13 @@ You have been warned.
     - This will open a web browser window and prompt you for permission to access the SFDC API, using your SSO credentials - this creates a token for subsequent calls to SFDC. 
     - Follow the sign-in prompts (you may need to sign in with SSO using the link at the bottom of the page), and once you've signed in successfully, close the browser tab. In the Powershell terminal, you should see a message indicating that your token has been stored - this means you're good to go :-)
     - *No SSO sign-in?* If you see a regular, non-Dell/non-SSO Salesforce sign-in page prompting for a username and password, look for a link towards the bottom of the login page containing "custom domain". Click the link, and enter `dell` for the domain when the prompt comes up. This should launch the SSO process.
-3. If you plan on using the standalone script 'sfdc_create_task.ps1' to create SFDC tasks, customize the list of task types (`$taskTypes`) in the task script to match your most commonly used types, ensuring that they match **exactly** what is listed in your SFDC UI instance.
+3. If you plan on using the standalone script 'sfdc_create_task.ps1' to create SFDC tasks directly, customize the list of task types (`$taskTypes`) in the task script to match your most commonly used types, ensuring that they match **exactly** what is listed in the SFDC Tasks UI.
 4. (***Optional | recommended***) Create a Desktop or Taskbar shortcut to the script and customize the icon for ease of access.
     * To create a shortcut, simply right-click an open space on your Desktop, select "New -> Shortcut".
-    * For the path, you will need to specify the path to Powershell, followed by the path to the relevant `sfdc_script.ps1` script. 
-        * Eg. `"C:\Program Files\PowerShell\7\pwsh.exe" -WorkingDirectory ~ "<path to your>\sfdc_script.ps1">`
+    * For the path, you will need to specify the path to Powershell 7, followed by the path to the relevant `sfdc_script.ps1` script, as follows:
+        * `"C:\Program Files\PowerShell\7\pwsh.exe" -WorkingDirectory ~ "<path to your>\sfdc_script.ps1">`
     * You can also change the icon. I've included an icon in this repo.
     * In order to create a Taskbar shortcut, first launch your newly created shortcut, right-click on the now-running powershell instance IN THE TASKBAR, and select "Pin to taskbar"
 
 ## Usage
-Simply launch the shortcut or script using Powershell and follow the prompts. Easy-peazy-lemon-squeezy.
+Simply launch the shortcut or script using the Powershell CLI and follow the prompts. Easy-peazy-lemon-squeezy.
