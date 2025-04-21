@@ -11,13 +11,13 @@ Write-Host "=> Beginning prechecks..." -ForegroundColor Cyan
 #Check whether the PnP.Powershell module is installed, and install it if not
 if (!(Get-Module -ListAvailable -Name "PnP.PowerShell")) {
     Write-Host "=> Installing Sharepoint PnP Powershell module..."
-    Install-Module -Name "PnP.PowerShell" -AcceptLicense
+    Install-Module -Name "PnP.PowerShell" -MaximumVersion "2.99" -AcceptLicense
     Write-Host "=> Sharepoint Powershell module installed..."
 }
-else {
-    Write-Host "=> Checking and Updating Sharepoint PnP Module..." -ForegroundColor Cyan
-    Update-Module -Name "PnP.PowerShell" -AcceptLicense
-}
+# else {
+#     Write-Host "=> Checking and Updating Sharepoint PnP Module..." -ForegroundColor Cyan
+#     Update-Module -Name "PnP.PowerShell" -AcceptLicense
+# }
 
 # Disable update checks on PnP.PowerShell module (since we're updating every time we run)
 [System.Environment]::SetEnvironmentVariable('PNPPOWERSHELL_UPDATECHECK', 'Off')
