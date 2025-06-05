@@ -1,10 +1,3 @@
-
-
-Write-Host "Setting SFDX CLI variables..."
-Set-Item -Path Env:SF_AUTOUPDATE_DISABLE -Value $false
-Set-Item -Path Env:SFDX_HIDE_RELEASE_NOTES -Value $true
-Set-Item -Path Env:SFDX_HIDE_RELEASE_NOTES_FOOTER -Value $true
-Write-Host "Settings applied..."
 # ====================================================== Set Variables =================================================================
 $SiteUrl = "https://dell.sharepoint.com/sites/DevOpsCloud-NativeSPEAR"
 $ListName = "SP Tasks"
@@ -105,7 +98,6 @@ $ListItems | ForEach-Object {
     # $taskDateTime = $customDate.ToUniversalTime().ToString( "yyyy-MM-ddTHH:mm:ss.fffffffZ" )
     $wsFocus = $($ListRow.WS_x0020_Focus)
     
-
     # ========= Create SFDC Task =========
     Write-Host "============================-->> Begin [$dealId] <<--============================" -ForegroundColor White
     $start = (Get-Date)  

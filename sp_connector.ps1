@@ -1,4 +1,11 @@
 
+Set-Item -Path Env:SF_AUTOUPDATE_DISABLE -Value $false
+Set-Item -Path Env:SF_HIDE_RELEASE_NOTES -Value $true
+Set-Item -Path Env:SF_HIDE_RELEASE_NOTES_FOOTER -Value $true
+Set-Item -Path Env:SF_SKIP_NEW_VERSION_CHECK -Value $true
+Set-Item -Path Env:SF_DISABLE_TELEMETRY -Value $true
+
+
 $SiteUrl = "https://dell.sharepoint.com/sites/DevOpsCloud-NativeSPEAR"
 $ListName = "Presales Tracker"
 #InternalName of the selected fields
@@ -7,48 +14,51 @@ $SelectedFields = @("ID", "Title", "Description", "SFDC_x0020_ID", "TCV_x0020__x
 $default_bgcolor = (get-host).UI.RawUI.BackgroundColor
 
 $SPConnection = $null
-Write-Host "=> Beginning prechecks..." -ForegroundColor Cyan
-#Check whether the PnP.Powershell module is installed, and install it if not
-if (!(Get-Module -ListAvailable -Name "PnP.PowerShell")) {
-    Write-Host "=> Installing Sharepoint PnP Powershell module..."
-    Install-Module -Name "PnP.PowerShell" -MaximumVersion "2.99" -AcceptLicense
-    Write-Host "=> Sharepoint Powershell module installed..."
-}
-# else {
-#     Write-Host "=> Checking and Updating Sharepoint PnP Module..." -ForegroundColor Cyan
-#     Update-Module -Name "PnP.PowerShell" -AcceptLicense
-# }
 
-# Disable update checks on PnP.PowerShell module (since we're updating every time we run)
+Import-Module "$PSScriptRoot\utils.psm1"
+
+Write-Host "=> Beginning prechecks..." -ForegroundColor Cyan
+
+Install-ModuleIfNeeded -Name "PnP.PowerShell" -MaxVersion "2.99"
+Install-ModuleIfNeeded -Name "powershell-yaml"
+Import-Module -Name "powershell-yaml"
+
 [System.Environment]::SetEnvironmentVariable('PNPPOWERSHELL_UPDATECHECK', 'Off')
 
-Write-Host "=> Checking and Updating SalesForce CLI..." -ForegroundColor Cyan
-sf update > $null
-Write-Host " " 
-Write-Host "========== Testing Sharepoint connection ===========" -ForegroundColor White
-try {
-    # First try to get list item from cached connection
-    $SPConnection = Get-PnPConnection
-    if ($null -eq $SPConnection) {
-        Write-Host "Reconnecting to Sharepoint..." -ForegroundColor Yellow
-        #Connect to PnP Online if above fails
-        $SPConnection = Connect-PnPOnline -Url $SiteURL -UseWebLogin -ReturnConnection
-        Write-Host "=> Connection successful..." -ForegroundColor Green
-        Write-Host "====================================================" -ForegroundColor White
-    }
-    else {
-        Write-Host "=> Connection successful..." -ForegroundColor Green
-        Write-Host "====================================================" -ForegroundColor White
-    }
+$settingsPath = "$PSScriptRoot\settings.yml"
+$yamlSettings = Get-YamlSettings -Path $settingsPath
+
+$lastUpdate = [DateTime]::ParseExact($yamlSettings.settings['last-update'], 'MM/dd/yyyy HH:mm:ss', $null)
+# Write-Output $lastUpdate
+$elapsed = New-TimeSpan -Start $lastUpdate -End $(Get-Date).ToString()
+$updateFreq = $yamlSettings.settings['update-frequency-days']
+if($elapsed.Days -ge $updateFreq)
+{
+    Write-Host "=> Checking and Updating SalesForce CLI..." -ForegroundColor Cyan
+    sf update > $null
+    # Write-Output $(Get-Date -Format "MM/dd/yyyy HH:mm:ss").ToString()
+    $yamlSettings.settings['last-update'] = $(Get-Date -Format "MM/dd/yyyy HH:mm:ss").ToString()
+    Save-YamlSettings -YamlSettings $yamlSettings -Path $settingsPath
 }
-catch {
-    Write-Host "Reconnecting to Sharepoint..." -ForegroundColor Yellow
-    #Connect to PnP Online if above fails
-    $SPConnection = Connect-PnPOnline -Url $SiteURL -UseWebLogin -ReturnConnection
-    Write-Host "=> Connection successful..." -ForegroundColor Green
-    Write-Host "====================================================" -ForegroundColor White
+else {
+    Write-Host "=> Skipping SalesForce CLI update. Will update again in $($updateFreq - $elapsed.Days) Days..."
 }
 
+Write-Host " " 
+Write-Host "========== Testing Sharepoint connection ===========" -ForegroundColor White
+
+
+# Check for username stored in config file, and if non-existent, prompt and create file
+Write-Host "Checking user configuration..."
+$username = Get-UserName -ConfigPath "$PSScriptRoot\user.cfg"
+
+$SPConnection = Connect-SharePoint -SiteUrl $SiteUrl
+
+Write-Host "=> Prechecks complete. Loading menu..." -ForegroundColor Green
+Write-Host "====================================================" -ForegroundColor White
+Start-Sleep -Seconds 1
+Clear-Host
+Write-Host " "
 
 Function PostSyncRoutine {
     Write-Host "Press Enter to Synchronize Sharepoint SP Tasks to SFDC next, or CTRL+C to exit..." -ForegroundColor White
@@ -56,32 +66,6 @@ Function PostSyncRoutine {
     & "$PSScriptRoot\sfdc_sync_tasks.ps1"
     Exit
 }
-
-Function Save-UserName {
-    $username = $(Write-Host "Please enter your email address as it appears in your SFDC Profile:" -ForegroundColor Yellow -BackgroundColor DarkGreen -NoNewLine; Read-Host)
-    Set-Content "$PSScriptRoot\user.cfg" -Value $username
-    return $username
-}
-
-# Check for username stored in config file, and if non-existent, prompt and create file
-Write-Host "Checking user configuration..."
-$username = ''
-if (Test-Path "$PSScriptRoot\user.cfg") {
-    $username = Get-Content "$PSScriptRoot\user.cfg"
-}
-else {
-    $username = Save-UserName
-}
-# Validate length of User Name, and re-prompt if invalid
-if ($username.Length -lt 8) {
-    $username = Save-UserName
-}
-
-Write-Host "=> Prechecks complete. Loading menu..." -ForegroundColor Green
-Write-Host "====================================================" -ForegroundColor White
-Start-Sleep -Seconds 1
-Clear-Host
-Write-Host " "
 
 $showSummary = $true
 Write-Host "Which Sharepoint Tracker Opportunities do you want to sync?" -NoNewLine -ForegroundColor Yellow -BackgroundColor DarkGreen
