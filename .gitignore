@@ -1,2 +1,10 @@
 user.cfg
 sharepoint.cfg
+bin/
+obj/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.cache
+*.pdb
