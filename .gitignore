@@ -2,6 +2,7 @@ user.cfg
 sharepoint.cfg
 bin/
 obj/
+Debug/
 *.suo
 *.user
 *.userosscache
