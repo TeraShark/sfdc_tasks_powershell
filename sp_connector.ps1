@@ -74,18 +74,21 @@ Write-Host "1. All Active Opportunities" -ForegroundColor White
 Write-Host "2. Active Opportunities created Today" -ForegroundColor White
 Write-Host "3. Active Opportunities created in the last 5 days" -ForegroundColor White
 Write-Host "4. Active Opportunities created by Me" -ForegroundColor White
-Write-Host "5. Active Opportunities containing a specific Discipline" -ForegroundColor White
-Write-Host "6. Single Opportunity by SFDC Deal ID" -ForegroundColor White
+Write-Host "5. Single Opportunity by SFDC Deal ID" -ForegroundColor White
 
 Write-Host " " -BackgroundColor $default_bgcolor
 $next = $(Write-Host "Choose an action (eg 1): " -ForegroundColor Yellow -BackgroundColor DarkGreen -NoNewLine; Read-Host)
 
-$camlQuery = "<View><Query><Where><And><Neq><FieldRef Name='Status'/><Value Type='Choice'>Cancelled</Value></Neq><And><Neq><FieldRef Name='Status'/><Value Type='Choice'>Lost</Value></Neq><And><IsNotNull><FieldRef Name='SFDC_x0020_ID'/></IsNotNull><And><Neq><FieldRef Name='Status'/><Value Type='Choice'>Complete</Value></Neq><Neq><FieldRef Name='Status'/><Value Type='Choice'>Cancelled / Archived</Value></Neq></And></And></And></And></Where></Query><ViewFields><FieldRef Name='ID' /><FieldRef Name='Title' /><FieldRef Name='Description' /><FieldRef Name='SFDC_x0020_ID' /><FieldRef Name='TCV_x0020__x0024_' /><FieldRef Name='Est_x002e__x0020_Close' /><FieldRef Name='SFDCLink' /><FieldRef Name='PrimaryContact' /></ViewFields></View>"
+Add-Type -Path "$PSScriptRoot\XmlTools\XmlTools.cs"
+$xmlTools = [XmlTools.XmlTools]::new($PSScriptRoot)
+
+$camlQuery = $xmlTools.getCAML([XmlTools.XmlTools+CAMLType]::Default)
+
 switch ("$next") {
     1 { Break }
     2 {
         # Today's items
-        $camlQuery = "<View><Query><Where><And><Eq><FieldRef Name='Created' /><Value Type='DateTime'><Today /></Value></Eq><And><Neq><FieldRef Name='Status'/><Value Type='Choice'>Cancelled</Value></Neq><And><Neq><FieldRef Name='Status'/><Value Type='Choice'>Lost</Value></Neq><And><IsNotNull><FieldRef Name='SFDC_x0020_ID'/></IsNotNull><And><Neq><FieldRef Name='Status'/><Value Type='Choice'>Complete</Value></Neq><Neq><FieldRef Name='Status'/><Value Type='Choice'>Cancelled / Archived</Value></Neq></And></And></And></And></And></Where></Query><ViewFields><FieldRef Name='ID' /><FieldRef Name='Title' /><FieldRef Name='Description' /><FieldRef Name='SFDC_x0020_ID' /><FieldRef Name='TCV_x0020__x0024_' /><FieldRef Name='Est_x002e__x0020_Close' /><FieldRef Name='SFDCLink' /><FieldRef Name='PrimaryContact' /></ViewFields></View>"
+        $camlQuery = $xmlTools.getCAML([XmlTools.XmlTools+CAMLType]::Today)
         $showSummary = $false
         Break
     }
@@ -93,24 +96,17 @@ switch ("$next") {
         # Last 5 days' items
         $today = (Get-Date)
         $act_date = $today.AddDays(-5).ToString("yyyy-MM-dd")
-        $camlQuery = "<View><Query><Where><And><Geq><FieldRef Name='Created' /><Value Type='DateTime'>$act_date</Value></Geq><And><Neq><FieldRef Name='Status'/><Value Type='Choice'>Cancelled</Value></Neq><And><Neq><FieldRef Name='Status'/><Value Type='Choice'>Lost</Value></Neq><And><IsNotNull><FieldRef Name='SFDC_x0020_ID'/></IsNotNull><And><Neq><FieldRef Name='Status'/><Value Type='Choice'>Complete</Value></Neq><Neq><FieldRef Name='Status'/><Value Type='Choice'>Cancelled / Archived</Value></Neq></And></And></And></And></And></Where></Query><ViewFields><FieldRef Name='ID' /><FieldRef Name='Title' /><FieldRef Name='Description' /><FieldRef Name='SFDC_x0020_ID' /><FieldRef Name='TCV_x0020__x0024_' /><FieldRef Name='Est_x002e__x0020_Close' /><FieldRef Name='SFDCLink' /><FieldRef Name='PrimaryContact' /></ViewFields></View>"
+        $camlQuery = $xmlTools.getCAML([XmlTools.XmlTools+CAMLType]::SinceDate, $act_date)
         Break
     }
     4 {
         # My items
-        $camlQuery = "<View><Query><Where><And><Eq><FieldRef Name='Author' LookupId='True' /><Value Type='Lookup'><UserID /></Value></Eq><And><Neq><FieldRef Name='Status'/><Value Type='Choice'>Cancelled</Value></Neq><And><Neq><FieldRef Name='Status'/><Value Type='Choice'>Lost</Value></Neq><And><IsNotNull><FieldRef Name='SFDC_x0020_ID'/></IsNotNull><And><Neq><FieldRef Name='Status'/><Value Type='Choice'>Complete</Value></Neq><Neq><FieldRef Name='Status'/><Value Type='Choice'>Cancelled / Archived</Value></Neq></And></And></And></And></And></Where></Query><ViewFields><FieldRef Name='ID' /><FieldRef Name='Title' /><FieldRef Name='Description' /><FieldRef Name='SFDC_x0020_ID' /><FieldRef Name='TCV_x0020__x0024_' /><FieldRef Name='Est_x002e__x0020_Close' /><FieldRef Name='SFDCLink' /><FieldRef Name='PrimaryContact' /></ViewFields></View>"
+        $camlQuery = $xmlTools.getCAML([XmlTools.XmlTools+CAMLType]::MyItems)
         $showSummary = $true
         Break
     }
     5 {
-        # Discipline
-        $discipline = $(Write-Host "Enter the discipline to filter by (e.g. ServiceNow): " -ForegroundColor Yellow -BackgroundColor DarkGreen -NoNewLine; Read-Host).Trim()
-        Write-Host " " -BackgroundColor $default_bgcolor
-        $camlQuery = "<View><Query><Where><And><Contains><FieldRef Name='Categories' /><Value Type='Choice'>$discipline</Value></Contains><And><Neq><FieldRef Name='Status'/><Value Type='Choice'>Cancelled</Value></Neq><And><Neq><FieldRef Name='Status'/><Value Type='Choice'>Lost</Value></Neq><And><IsNotNull><FieldRef Name='SFDC_x0020_ID'/></IsNotNull><And><Neq><FieldRef Name='Status'/><Value Type='Choice'>Complete</Value></Neq><Neq><FieldRef Name='Status'/><Value Type='Choice'>Cancelled / Archived</Value></Neq></And></And></And></And></And></Where></Query><ViewFields><FieldRef Name='ID' /><FieldRef Name='Title' /><FieldRef Name='Description' /><FieldRef Name='Categories' /><FieldRef Name='SFDC_x0020_ID' /><FieldRef Name='TCV_x0020__x0024_' /><FieldRef Name='Est_x002e__x0020_Close' /><FieldRef Name='SFDCLink' /><FieldRef Name='PrimaryContact' /></ViewFields></View>"
-        $showSummary = $true
-        Break
-    }
-    6 {
+        # By SFDC Deal ID
         $dealId = $(Write-Host "Enter Deal ID: " -ForegroundColor Yellow -BackgroundColor DarkGreen -NoNewLine; Read-Host).Trim()
         $isDealIdValid = $false
         while ($isDealIdValid -ne $true) {
@@ -123,12 +119,20 @@ switch ("$next") {
             }
         }
         Write-Host " " -BackgroundColor $default_bgcolor
-        $camlQuery = "<View><Query><Where><Eq><FieldRef Name='SFDC_x0020_ID' /><Value Type='Text'>$dealId</Value></Eq></Where></Query><ViewFields><FieldRef Name='ID' /><FieldRef Name='Title' /><FieldRef Name='Description' /><FieldRef Name='SFDC_x0020_ID' /><FieldRef Name='TCV_x0020__x0024_' /><FieldRef Name='Est_x002e__x0020_Close' /><FieldRef Name='SFDCLink' /><FieldRef Name='PrimaryContact' /></ViewFields></View>"
+        $camlQuery = $xmlTools.getCAML([XmlTools.XmlTools+CAMLType]::ByDealID, $dealId)
         $showSummary = $false
         Break
     }
+    # Never really used, so commenting for now
+    # 6 {
+    #     # Discipline
+    #     $discipline = $(Write-Host "Enter the discipline to filter by (e.g. ServiceNow): " -ForegroundColor Yellow -BackgroundColor DarkGreen -NoNewLine; Read-Host).Trim()
+    #     Write-Host " " -BackgroundColor $default_bgcolor
+    #     $camlQuery = "<View><Query><Where><And><Contains><FieldRef Name='Categories' /><Value Type='Choice'>$discipline</Value></Contains><And><Neq><FieldRef Name='Status'/><Value Type='Choice'>Cancelled</Value></Neq><And><Neq><FieldRef Name='Status'/><Value Type='Choice'>Lost</Value></Neq><And><IsNotNull><FieldRef Name='SFDC_x0020_ID'/></IsNotNull><And><Neq><FieldRef Name='Status'/><Value Type='Choice'>Complete</Value></Neq><Neq><FieldRef Name='Status'/><Value Type='Choice'>Cancelled / Archived</Value></Neq></And></And></And></And></And></Where></Query><ViewFields><FieldRef Name='ID' /><FieldRef Name='Title' /><FieldRef Name='Description' /><FieldRef Name='Categories' /><FieldRef Name='SFDC_x0020_ID' /><FieldRef Name='TCV_x0020__x0024_' /><FieldRef Name='Est_x002e__x0020_Close' /><FieldRef Name='SFDCLink' /><FieldRef Name='PrimaryContact' /></ViewFields></View>"
+    #     $showSummary = $true
+    #     Break
+    # }
 }
-
 
 # Write-Host "Query: $camlQuery"
 # Read-Host
