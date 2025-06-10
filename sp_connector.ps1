@@ -1,32 +1,29 @@
+#region Environment Setup
 
-Set-Item -Path Env:SF_AUTOUPDATE_DISABLE -Value $false
+Set-Item -Path Env:SF_AUTOUPDATE_DISABLE -Value $true
 Set-Item -Path Env:SF_HIDE_RELEASE_NOTES -Value $true
 Set-Item -Path Env:SF_HIDE_RELEASE_NOTES_FOOTER -Value $true
 Set-Item -Path Env:SF_SKIP_NEW_VERSION_CHECK -Value $true
 Set-Item -Path Env:SF_DISABLE_TELEMETRY -Value $true
+Set-Item -Path Env:PNPPOWERSHELL_UPDATECHECK -Value 'Off'
+# [System.Environment]::SetEnvironmentVariable('PNPPOWERSHELL_UPDATECHECK', 'Off')
 
-
-$SiteUrl = "https://dell.sharepoint.com/sites/DevOpsCloud-NativeSPEAR"
-$ListName = "Presales Tracker"
-#InternalName of the selected fields
-$SelectedFields = @("ID", "Title", "Description", "SFDC_x0020_ID", "TCV_x0020__x0024_", "Est_x002e__x0020_Close", "SFDCLink", "Categories", "PrimaryContact", "Sector")
+#endregion
 
 $default_bgcolor = (get-host).UI.RawUI.BackgroundColor
 
-$SPConnection = $null
-
 Import-Module "$PSScriptRoot\utils.psm1"
-
-Write-Host "=> Beginning prechecks..." -ForegroundColor Cyan
 
 Install-ModuleIfNeeded -Name "PnP.PowerShell" -MaxVersion "2.99"
 Install-ModuleIfNeeded -Name "powershell-yaml"
 Import-Module -Name "powershell-yaml"
 
-[System.Environment]::SetEnvironmentVariable('PNPPOWERSHELL_UPDATECHECK', 'Off')
-
 $settingsPath = "$PSScriptRoot\settings.yml"
 $yamlSettings = Get-YamlSettings -Path $settingsPath
+
+#region Prechecks
+
+Write-Host "=> Beginning prechecks..." -ForegroundColor Cyan
 
 $lastUpdate = [DateTime]::ParseExact($yamlSettings.settings['last-update'], 'MM/dd/yyyy HH:mm:ss', $null)
 # Write-Output $lastUpdate
@@ -46,11 +43,18 @@ else {
 
 Write-Host " " 
 Write-Host "========== Testing Sharepoint connection ===========" -ForegroundColor White
+# Load Shareoiunt settings from YAML
+$SiteUrl = $yamlSettings.settings['sharepoint-tracker-url']
+$ListName = $yamlSettings.settings['sharepoint-tracker-listname']
 
+$SelectedFields = $yamlSettings.settings['sharepoint-tracker-default-fields']
+
+$SPConnection = $null
 # Check for username stored in config file, and if non-existent, prompt and create file
 Write-Host "Checking user configuration..."
 $username = Get-UserName -ConfigPath "$PSScriptRoot\user.cfg"
 $SPConnection = Connect-SharePoint -SiteUrl $SiteUrl
+
 $showSummary = [System.Convert]::ToBoolean($yamlSettings.settings['show-summary'])
 
 Write-Host "=> Prechecks complete. Loading menu..." -ForegroundColor Green
@@ -58,6 +62,8 @@ Write-Host "====================================================" -ForegroundCol
 Start-Sleep -Seconds 1
 Clear-Host
 Write-Host " "
+
+#endregion
 
 Function PostSyncRoutine {
     Write-Host "=> Press Enter to Synchronize Sharepoint SP Tasks to SFDC, or CTRL+C to exit..." -ForegroundColor White

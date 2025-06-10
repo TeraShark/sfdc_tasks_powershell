@@ -2,4 +2,18 @@ settings:
   update-frequency-days: 30
   last-update: 06/05/2025 14:28:35
   show-summary: true
+  sharepoint-tracker-url: "https://dell.sharepoint.com/sites/DevOpsCloud-NativeSPEAR"
+  sharepoint-tracker-listname: "Presales Tracker"
+  sharepoint-tracker-default-fields:
+    - "ID"
+    - "Title"
+    - "Description"
+    - "SFDC_x0020_ID"
+    - "TCV_x0020__x0024_"
+    - "Est_x002e__x0020_Close"
+    - "SFDCLink"
+    - "Categories"
+    - "PrimaryContact"
+    - "Sector"
+
 
