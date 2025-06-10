@@ -41,18 +41,17 @@ if($elapsed.Days -ge $updateFreq)
     Save-YamlSettings -YamlSettings $yamlSettings -Path $settingsPath
 }
 else {
-    Write-Host "=> Skipping SalesForce CLI update. Will update again in $($updateFreq - $elapsed.Days) Days..."
+    Write-Host "=> Skipping SalesForce CLI update. Update frequency: $updateFreq days. Remaining days: $($updateFreq - $elapsed.Days)."
 }
 
 Write-Host " " 
 Write-Host "========== Testing Sharepoint connection ===========" -ForegroundColor White
 
-
 # Check for username stored in config file, and if non-existent, prompt and create file
 Write-Host "Checking user configuration..."
 $username = Get-UserName -ConfigPath "$PSScriptRoot\user.cfg"
-
 $SPConnection = Connect-SharePoint -SiteUrl $SiteUrl
+$showSummary = [System.Convert]::ToBoolean($yamlSettings.settings['show-summary'])
 
 Write-Host "=> Prechecks complete. Loading menu..." -ForegroundColor Green
 Write-Host "====================================================" -ForegroundColor White
@@ -61,13 +60,13 @@ Clear-Host
 Write-Host " "
 
 Function PostSyncRoutine {
-    Write-Host "Press Enter to Synchronize Sharepoint SP Tasks to SFDC next, or CTRL+C to exit..." -ForegroundColor White
+    Write-Host "=> Press Enter to Synchronize Sharepoint SP Tasks to SFDC, or CTRL+C to exit..." -ForegroundColor White
     Read-Host
     & "$PSScriptRoot\sfdc_sync_tasks.ps1"
     Exit
 }
 
-$showSummary = $true
+
 Write-Host "Which Sharepoint Tracker Opportunities do you want to sync?" -NoNewLine -ForegroundColor Yellow -BackgroundColor DarkGreen
 Write-Host " " -BackgroundColor $default_bgcolor
 Write-Host "1. All Active Opportunities" -ForegroundColor White
@@ -123,21 +122,9 @@ switch ("$next") {
         $showSummary = $false
         Break
     }
-    # Never really used, so commenting for now
-    # 6 {
-    #     # Discipline
-    #     $discipline = $(Write-Host "Enter the discipline to filter by (e.g. ServiceNow): " -ForegroundColor Yellow -BackgroundColor DarkGreen -NoNewLine; Read-Host).Trim()
-    #     Write-Host " " -BackgroundColor $default_bgcolor
-    #     $camlQuery = "<View><Query><Where><And><Contains><FieldRef Name='Categories' /><Value Type='Choice'>$discipline</Value></Contains><And><Neq><FieldRef Name='Status'/><Value Type='Choice'>Cancelled</Value></Neq><And><Neq><FieldRef Name='Status'/><Value Type='Choice'>Lost</Value></Neq><And><IsNotNull><FieldRef Name='SFDC_x0020_ID'/></IsNotNull><And><Neq><FieldRef Name='Status'/><Value Type='Choice'>Complete</Value></Neq><Neq><FieldRef Name='Status'/><Value Type='Choice'>Cancelled / Archived</Value></Neq></And></And></And></And></And></Where></Query><ViewFields><FieldRef Name='ID' /><FieldRef Name='Title' /><FieldRef Name='Description' /><FieldRef Name='Categories' /><FieldRef Name='SFDC_x0020_ID' /><FieldRef Name='TCV_x0020__x0024_' /><FieldRef Name='Est_x002e__x0020_Close' /><FieldRef Name='SFDCLink' /><FieldRef Name='PrimaryContact' /></ViewFields></View>"
-    #     $showSummary = $true
-    #     Break
-    # }
 }
 
-# Write-Host "Query: $camlQuery"
-# Read-Host
-#PageSize:The number of items to retrieve per page request
-#$ListItems = Get-PnPListItem -List $ListName -Fields $SelectedFields 
+
 Write-Host " "
 Write-Host "Fetching Sharepoint Tracker Opportunities..." -ForegroundColor White
 $ListItems = Get-PnPListItem -List $ListName -Query $camlQuery -Connection $SPConnection
@@ -167,7 +154,7 @@ $nineties = @()
 
 #endregion
 
-
+#region Loop through Sharepoint Tracker Opportunities
 $ListItems | ForEach-Object {
     $ListItem = Get-PnPProperty -Connection $SPConnection -ClientObject $_ -Property FieldValuesAsText
     $ListRow = New-Object PSObject
@@ -224,7 +211,6 @@ $ListItems | ForEach-Object {
             Write-Host "                                                          |" -ForegroundColor White
         }
         else {
-          
             $oppName = $opp.result.records.Name
             $oppId = $opp.result.records.ID
             $amount = '{0:C}' -f $opp.result.records.Amount
@@ -324,6 +310,8 @@ $ListItems | ForEach-Object {
         }
     }
 }
+#endregion
+
 Write-Host "                                                         ~~~" -ForegroundColor White
 #region Summary
 if ($showSummary -eq $true) {
